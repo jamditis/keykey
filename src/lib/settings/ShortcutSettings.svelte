@@ -34,8 +34,8 @@
             oninput={(e) => {
               const val = (e.currentTarget as HTMLInputElement).value.trim();
               config.shortcuts[shortcut.key] = val || null;
-              onSave();
             }}
+            onblur={onSave}
           />
           {#if config.shortcuts[shortcut.key]}
             <button

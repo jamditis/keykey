@@ -28,7 +28,7 @@ pub struct EventProcessor {
     last_key: Option<String>,
     last_key_time: Option<u64>,
     repeat_count: u32,
-    repeat_window_ms: u64,
+    pub repeat_window_ms: u64,
     next_id: u32,
 }
 

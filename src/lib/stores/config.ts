@@ -32,6 +32,7 @@ export interface AppConfig {
     switch_mode: string | null;
     toggle_overlay: string | null;
   };
+  first_launch: boolean;
 }
 
 function createConfigStore() {

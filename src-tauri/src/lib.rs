@@ -29,15 +29,8 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .on_menu_event(|app, event| {
             match event.id().as_ref() {
                 "toggle" => {
-                    if let Some(overlay) = app.get_webview_window("overlay") {
-                        if overlay.is_visible().unwrap_or(false) {
-                            let _ = overlay.hide();
-                            let _ = app.emit("capture-toggled", false);
-                        } else {
-                            let _ = overlay.show();
-                            let _ = app.emit("capture-toggled", true);
-                        }
-                    }
+                    let is_capturing = keyboard::listener::toggle_capture();
+                    let _ = app.emit("capture-toggled", is_capturing);
                 }
                 "switch_mode" => {
                     let _ = app.emit("switch-display-mode", ());
@@ -171,7 +164,11 @@ pub fn run() {
                             if event.state() == ShortcutState::Pressed {
                                 if let Some(action) = actions_for_handler.get(&shortcut.id()) {
                                     match action.as_str() {
-                                        "toggle_capture" | "toggle_overlay" => {
+                                        "toggle_capture" => {
+                                            let is_capturing = keyboard::listener::toggle_capture();
+                                            let _ = app.emit("capture-toggled", is_capturing);
+                                        }
+                                        "toggle_overlay" => {
                                             if let Some(overlay) =
                                                 app.get_webview_window("overlay")
                                             {
@@ -182,7 +179,6 @@ pub fn run() {
                                                 } else {
                                                     let _ = overlay.show();
                                                 }
-                                                let _ = app.emit("capture-toggled", !visible);
                                             }
                                         }
                                         "switch_mode" => {
@@ -216,11 +212,19 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 std::thread::spawn(move || {
                     let mut last_monitor_name = String::new();
+                    let mut last_corner_str = String::new();
+                    let mut last_margin_x: i32 = 0;
+                    let mut last_margin_y: i32 = 0;
+
                     loop {
-                        let strategy = {
+                        let (strategy, corner, margins) = {
                             let state = app_handle.state::<ConfigState>();
                             let config = state.0.lock().unwrap();
-                            config.display.position_strategy.clone()
+                            (
+                                config.display.position_strategy.clone(),
+                                config.display.corner.clone(),
+                                config.display.margins.clone(),
+                            )
                         };
 
                         let target_monitor = match strategy {
@@ -237,17 +241,18 @@ pub fn run() {
                         };
 
                         if let Some(m) = target_monitor {
-                            if m.name != last_monitor_name {
-                                last_monitor_name = m.name.clone();
-                                if let Some(overlay) = app_handle.get_webview_window("overlay") {
-                                    // Read config for corner + margins
-                                    let (corner, margins) = {
-                                        let state = app_handle.state::<ConfigState>();
-                                        let cfg = state.0.lock().unwrap();
-                                        (cfg.display.corner.clone(), cfg.display.margins.clone())
-                                    };
+                            let corner_str = format!("{:?}", corner);
+                            let config_changed = corner_str != last_corner_str
+                                || margins.x != last_margin_x
+                                || margins.y != last_margin_y;
 
-                                    // Use overlay's actual outer size
+                            if m.name != last_monitor_name || config_changed {
+                                last_monitor_name = m.name.clone();
+                                last_corner_str = corner_str;
+                                last_margin_x = margins.x;
+                                last_margin_y = margins.y;
+
+                                if let Some(overlay) = app_handle.get_webview_window("overlay") {
                                     let (ow, oh) = match overlay.outer_size() {
                                         Ok(size) => (size.width as i32, size.height as i32),
                                         Err(_) => (400, 300),

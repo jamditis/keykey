@@ -1,5 +1,3 @@
-import type { DisplayEvent } from './types';
-
 export interface Theme {
   name: string;
   label: string;

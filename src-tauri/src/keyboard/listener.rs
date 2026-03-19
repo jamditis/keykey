@@ -3,14 +3,23 @@ use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::thread;
-use tauri::{AppHandle, Emitter, Listener};
-use super::processor::EventProcessor;
+use tauri::{AppHandle, Emitter, Listener, Manager};
+use super::processor::{EventProcessor, ModifierMode};
+use crate::config::schema::{AppConfig, ModifierMode as CfgModifierMode};
+use crate::commands::ConfigState;
 
 /// Shared flag to pause/resume event emission without stopping the rdev hook.
 static CAPTURE_ENABLED: AtomicBool = AtomicBool::new(true);
 
 pub fn set_capture_enabled(enabled: bool) {
     CAPTURE_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
+pub fn toggle_capture() -> bool {
+    let was_enabled = CAPTURE_ENABLED.load(Ordering::Relaxed);
+    let new_state = !was_enabled;
+    CAPTURE_ENABLED.store(new_state, Ordering::Relaxed);
+    new_state
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -74,6 +83,25 @@ pub fn key_to_code(key: &Key) -> String {
     format!("{:?}", key)
 }
 
+fn convert_modifier_mode(mode: &CfgModifierMode) -> ModifierMode {
+    match mode {
+        CfgModifierMode::Smart => ModifierMode::Smart,
+        CfgModifierMode::AlwaysShow => ModifierMode::AlwaysShow,
+        CfgModifierMode::NeverShow => ModifierMode::NeverShow,
+        CfgModifierMode::ComboOnly => ModifierMode::ComboOnly,
+    }
+}
+
+fn apply_config_to_processor(processor: &mut EventProcessor, config: &AppConfig) {
+    processor.smart_threshold_ms = config.input.smart_threshold_ms;
+    processor.show_all_keystrokes = config.input.show_all_keystrokes;
+    processor.repeat_window_ms = config.input.repeat_window_ms;
+    processor.set_modifier_mode("Ctrl", convert_modifier_mode(&config.input.modifier_overrides.ctrl));
+    processor.set_modifier_mode("Alt", convert_modifier_mode(&config.input.modifier_overrides.alt));
+    processor.set_modifier_mode("Shift", convert_modifier_mode(&config.input.modifier_overrides.shift));
+    processor.set_modifier_mode("Win", convert_modifier_mode(&config.input.modifier_overrides.win));
+}
+
 pub fn start_listener(app_handle: AppHandle) {
     let (tx, rx) = mpsc::channel::<Event>();
 
@@ -91,20 +119,42 @@ pub fn start_listener(app_handle: AppHandle) {
     });
 
     // Listen for capture-toggled events from tray/hotkeys
-    let app_for_listener = app_handle.clone();
-    app_for_listener.listen("capture-toggled", |event| {
-        if let Some(enabled) = event.payload().parse::<bool>().ok() {
+    let app_clone = app_handle.clone();
+    app_clone.listen("capture-toggled", |event| {
+        if let Ok(enabled) = event.payload().parse::<bool>() {
             set_capture_enabled(enabled);
         }
     });
 
+    // Channel for config updates to processor thread
+    let (config_tx, config_rx) = mpsc::channel::<AppConfig>();
+    let app_clone2 = app_handle.clone();
+    app_clone2.listen("config-changed", move |event| {
+        if let Ok(config) = serde_json::from_str::<AppConfig>(event.payload()) {
+            let _ = config_tx.send(config);
+        }
+    });
+
+    // Read initial config to configure processor
+    let initial_config = {
+        let state = app_handle.state::<ConfigState>();
+        let guard = state.0.lock().unwrap();
+        guard.clone()
+    };
+
     thread::spawn(move || {
         let mut processor = EventProcessor::new();
+        apply_config_to_processor(&mut processor, &initial_config);
 
         while let Ok(event) = rx.recv() {
             // Skip event emission when capture is paused
             if !CAPTURE_ENABLED.load(Ordering::Relaxed) {
                 continue;
+            }
+
+            // Apply any pending config updates (non-blocking)
+            while let Ok(config) = config_rx.try_recv() {
+                apply_config_to_processor(&mut processor, &config);
             }
 
             let (key, is_press) = match &event.event_type {
