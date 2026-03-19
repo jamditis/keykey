@@ -4,6 +4,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { keystream } from '../stores/keystream';
   import TextStream from './TextStream.svelte';
+  import VisualKeyboard from './VisualKeyboard.svelte';
   import { applyTheme, getThemeByName } from '../theme-engine';
   import type { DisplayEvent } from '../types';
 
@@ -48,7 +49,11 @@
 </script>
 
 <div class="overlay-container">
-  <TextStream />
+  {#if displayMode === 'visual_keyboard'}
+    <VisualKeyboard />
+  {:else}
+    <TextStream />
+  {/if}
 </div>
 
 <style>
