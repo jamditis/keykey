@@ -9,6 +9,9 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
 
+#[cfg(desktop)]
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+
 fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let toggle_i = MenuItem::with_id(app, "toggle", "Pause capture", true, None::<&str>)?;
     let switch_mode_i = MenuItem::with_id(app, "switch_mode", "Switch to visual keyboard", true, None::<&str>)?;
@@ -131,6 +134,75 @@ pub fn run() {
                     let mut updated = config;
                     updated.first_launch = false;
                     let _ = config::store::save_config(&updated);
+                }
+            }
+
+            // Register global shortcuts from config
+            #[cfg(desktop)]
+            {
+                let config = config::store::load_config();
+
+                // Build a map of shortcut id -> action name so the handler can dispatch
+                let mut shortcut_actions: std::collections::HashMap<u32, String> =
+                    std::collections::HashMap::new();
+
+                let mut shortcut_strings: Vec<String> = Vec::new();
+
+                for (shortcut_str, action) in [
+                    (&config.shortcuts.toggle_capture, "toggle_capture"),
+                    (&config.shortcuts.switch_mode, "switch_mode"),
+                    (&config.shortcuts.toggle_overlay, "toggle_overlay"),
+                ] {
+                    if let Some(s) = shortcut_str {
+                        if let Ok(parsed) = s.parse::<tauri_plugin_global_shortcut::Shortcut>() {
+                            shortcut_actions.insert(parsed.id(), action.to_string());
+                            shortcut_strings.push(s.clone());
+                        } else {
+                            eprintln!("invalid shortcut string '{}', skipping", s);
+                        }
+                    }
+                }
+
+                let actions_for_handler = shortcut_actions;
+
+                app.handle().plugin(
+                    tauri_plugin_global_shortcut::Builder::new()
+                        .with_handler(move |app, shortcut, event| {
+                            if event.state() == ShortcutState::Pressed {
+                                if let Some(action) = actions_for_handler.get(&shortcut.id()) {
+                                    match action.as_str() {
+                                        "toggle_capture" | "toggle_overlay" => {
+                                            if let Some(overlay) =
+                                                app.get_webview_window("overlay")
+                                            {
+                                                let visible =
+                                                    overlay.is_visible().unwrap_or(false);
+                                                if visible {
+                                                    let _ = overlay.hide();
+                                                } else {
+                                                    let _ = overlay.show();
+                                                }
+                                                let _ = app.emit("capture-toggled", !visible);
+                                            }
+                                        }
+                                        "switch_mode" => {
+                                            let _ = app.emit("switch-display-mode", ());
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        })
+                        .build(),
+                )?;
+
+                // Register each shortcut
+                for s in &shortcut_strings {
+                    if let Ok(parsed) = s.parse::<tauri_plugin_global_shortcut::Shortcut>() {
+                        if let Err(e) = app.global_shortcut().register(parsed) {
+                            eprintln!("failed to register shortcut '{}': {}", s, e);
+                        }
+                    }
                 }
             }
 
