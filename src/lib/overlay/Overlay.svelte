@@ -1,32 +1,26 @@
 <script lang="ts">
   import { listen } from '@tauri-apps/api/event';
   import { onMount, onDestroy } from 'svelte';
+  import { keystream } from '../stores/keystream';
+  import TextStream from './TextStream.svelte';
+  import type { DisplayEvent } from '../types';
 
-  interface KeyEvent {
-    key: string;
-    key_code: string;
-    event_type: string;
-    timestamp: number;
-  }
-
-  let lastKey = $state('waiting for input...');
   let unlisten: (() => void) | null = null;
 
   onMount(async () => {
-    unlisten = await listen<KeyEvent>('key-event', (event) => {
-      if (event.payload.event_type === 'press') {
-        lastKey = event.payload.key;
-      }
+    unlisten = await listen<DisplayEvent>('display-event', (event) => {
+      keystream.push(event.payload);
     });
   });
 
   onDestroy(() => {
     if (unlisten) unlisten();
+    keystream.destroy();
   });
 </script>
 
 <div class="overlay-container">
-  <div class="debug-label">{lastKey}</div>
+  <TextStream />
 </div>
 
 <style>
@@ -34,18 +28,5 @@
     position: fixed;
     bottom: 32px;
     right: 32px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-  }
-
-  .debug-label {
-    background: rgba(0, 0, 0, 0.7);
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-family: system-ui, sans-serif;
-    font-size: 14px;
   }
 </style>
