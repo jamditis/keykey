@@ -7,8 +7,7 @@ export interface AppConfig {
     mode: string;
     position_strategy: string;
     corner: string;
-    margin_x: number;
-    margin_y: number;
+    margins: { x: number; y: number };
     max_visible: number;
     fade_duration_ms: number;
     stack_direction: string;

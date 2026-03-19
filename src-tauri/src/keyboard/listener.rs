@@ -1,9 +1,17 @@
 use rdev::{listen, Event, EventType, Key};
 use serde::Serialize;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::thread;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Listener};
 use super::processor::EventProcessor;
+
+/// Shared flag to pause/resume event emission without stopping the rdev hook.
+static CAPTURE_ENABLED: AtomicBool = AtomicBool::new(true);
+
+pub fn set_capture_enabled(enabled: bool) {
+    CAPTURE_ENABLED.store(enabled, Ordering::Relaxed);
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct KeyEvent {
@@ -82,10 +90,23 @@ pub fn start_listener(app_handle: AppHandle) {
         }
     });
 
+    // Listen for capture-toggled events from tray/hotkeys
+    let app_for_listener = app_handle.clone();
+    app_for_listener.listen("capture-toggled", |event| {
+        if let Some(enabled) = event.payload().parse::<bool>().ok() {
+            set_capture_enabled(enabled);
+        }
+    });
+
     thread::spawn(move || {
         let mut processor = EventProcessor::new();
 
         while let Ok(event) = rx.recv() {
+            // Skip event emission when capture is paused
+            if !CAPTURE_ENABLED.load(Ordering::Relaxed) {
+                continue;
+            }
+
             let (key, is_press) = match &event.event_type {
                 EventType::KeyPress(k) => (k, true),
                 EventType::KeyRelease(k) => (k, false),

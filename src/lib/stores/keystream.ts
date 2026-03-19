@@ -1,20 +1,24 @@
 import { writable } from 'svelte/store';
 import type { DisplayEvent, StreamEntry } from '../types';
 
-const MAX_VISIBLE = 5;
-const FADE_DURATION_MS = 2000;
-
 function createKeystream() {
   const { subscribe, update } = writable<StreamEntry[]>([]);
   let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+  let maxVisible = 5;
+  let fadeDurationMs = 2000;
 
   function startCleanup() {
     if (cleanupTimer) return;
     cleanupTimer = setInterval(() => {
       const now = Date.now();
-      update((entries) =>
-        entries.filter((e) => now - e.created_at < FADE_DURATION_MS)
-      );
+      update((entries) => {
+        const filtered = entries.filter((e) => now - e.created_at < fadeDurationMs);
+        // Stop polling when stream is empty
+        if (filtered.length === 0) {
+          stopCleanup();
+        }
+        return filtered;
+      });
     }, 100);
   }
 
@@ -27,17 +31,27 @@ function createKeystream() {
 
   return {
     subscribe,
+    configure(opts: { maxVisible?: number; fadeDurationMs?: number }) {
+      if (opts.maxVisible !== undefined) maxVisible = opts.maxVisible;
+      if (opts.fadeDurationMs !== undefined) fadeDurationMs = opts.fadeDurationMs;
+    },
     push(event: DisplayEvent) {
       startCleanup();
       update((entries) => {
-        if (entries.length > 0 && entries[entries.length - 1].id === event.id) {
-          const updated = [...entries];
-          updated[updated.length - 1] = {
-            ...updated[updated.length - 1],
-            label: event.label,
-            repeat_count: updated[updated.length - 1].repeat_count + 1,
-          };
-          return updated;
+        // Repeat compression: compare by base label (strip " xN" suffix)
+        const baseLabel = event.label.replace(/ x\d+$/, '');
+        if (entries.length > 0) {
+          const last = entries[entries.length - 1];
+          const lastBase = last.label.replace(/ x\d+$/, '');
+          if (lastBase === baseLabel) {
+            const updated = [...entries];
+            updated[updated.length - 1] = {
+              ...last,
+              label: event.label,
+              repeat_count: last.repeat_count + 1,
+            };
+            return updated;
+          }
         }
 
         const newEntry: StreamEntry = {
@@ -49,10 +63,10 @@ function createKeystream() {
         };
 
         const updated = [...entries, newEntry];
-        return updated.slice(-MAX_VISIBLE);
+        return updated.slice(-maxVisible);
       });
     },
-    clear() { update(() => []); },
+    clear() { update(() => []); stopCleanup(); },
     destroy() { stopCleanup(); },
   };
 }

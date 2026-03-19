@@ -4,9 +4,10 @@
   let { config = $bindable(), onSave }: { config: AppConfig; onSave: () => void } = $props();
 
   const modifierModes = [
-    { value: 'symbol', label: 'Symbol (Ctrl)' },
-    { value: 'name', label: 'Name (Control)' },
-    { value: 'hidden', label: 'Hidden' },
+    { value: 'smart', label: 'Smart (based on context)' },
+    { value: 'always_show', label: 'Always show' },
+    { value: 'never_show', label: 'Never show' },
+    { value: 'combo_only', label: 'Show only in combos' },
   ];
 </script>
 

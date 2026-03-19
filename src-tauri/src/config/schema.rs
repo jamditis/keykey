@@ -127,7 +127,7 @@ impl Default for AppConfig {
                 },
             },
             appearance: AppearanceConfig {
-                active_theme: "default-dark".to_string(),
+                active_theme: "dark-glass".to_string(),
             },
             shortcuts: ShortcutConfig {
                 toggle_capture: None,

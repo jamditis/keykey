@@ -6,7 +6,7 @@ use std::time::Instant;
 pub struct DisplayEvent {
     pub label: String,
     pub is_combo: bool,
-    pub id: u64,
+    pub id: u32,
     pub timestamp: u64,
 }
 
@@ -29,7 +29,7 @@ pub struct EventProcessor {
     last_key_time: Option<u64>,
     repeat_count: u32,
     repeat_window_ms: u64,
-    next_id: u64,
+    next_id: u32,
 }
 
 const MODIFIERS: &[&str] = &["Ctrl", "Alt", "Shift", "Win", "AltGr"];
@@ -63,9 +63,9 @@ impl EventProcessor {
         }
     }
 
-    fn next_id(&mut self) -> u64 {
+    fn next_id(&mut self) -> u32 {
         let id = self.next_id;
-        self.next_id += 1;
+        self.next_id = self.next_id.wrapping_add(1);
         id
     }
 

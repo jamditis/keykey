@@ -240,8 +240,39 @@ pub fn run() {
                             if m.name != last_monitor_name {
                                 last_monitor_name = m.name.clone();
                                 if let Some(overlay) = app_handle.get_webview_window("overlay") {
-                                    let x = m.work_x + m.work_width - 420;
-                                    let y = m.work_y + m.work_height - 320;
+                                    // Read config for corner + margins
+                                    let (corner, margins) = {
+                                        let state = app_handle.state::<ConfigState>();
+                                        let cfg = state.0.lock().unwrap();
+                                        (cfg.display.corner.clone(), cfg.display.margins.clone())
+                                    };
+
+                                    // Use overlay's actual outer size
+                                    let (ow, oh) = match overlay.outer_size() {
+                                        Ok(size) => (size.width as i32, size.height as i32),
+                                        Err(_) => (400, 300),
+                                    };
+
+                                    use crate::config::schema::Corner;
+                                    let (x, y) = match corner {
+                                        Corner::BottomRight => (
+                                            m.work_x + m.work_width - ow - margins.x,
+                                            m.work_y + m.work_height - oh - margins.y,
+                                        ),
+                                        Corner::BottomLeft => (
+                                            m.work_x + margins.x,
+                                            m.work_y + m.work_height - oh - margins.y,
+                                        ),
+                                        Corner::TopRight => (
+                                            m.work_x + m.work_width - ow - margins.x,
+                                            m.work_y + margins.y,
+                                        ),
+                                        Corner::TopLeft => (
+                                            m.work_x + margins.x,
+                                            m.work_y + margins.y,
+                                        ),
+                                    };
+
                                     let _ = overlay.set_position(tauri::Position::Physical(
                                         tauri::PhysicalPosition::new(x, y),
                                     ));

@@ -19,9 +19,9 @@
     <div class="field">
       <label for="position-strategy">Position strategy</label>
       <select id="position-strategy" bind:value={config.display.position_strategy} onchange={onSave}>
-        <option value="corner">Corner</option>
-        <option value="center">Center</option>
-        <option value="custom">Custom</option>
+        <option value="follow_active_window">Follow active window</option>
+        <option value="follow_mouse">Follow mouse</option>
+        <option value="pinned">Pinned</option>
       </select>
     </div>
 
@@ -84,7 +84,7 @@
           type="number"
           min="0"
           max="500"
-          bind:value={config.display.margin_x}
+          bind:value={config.display.margins.x}
           onchange={onSave}
         />
         <span class="unit">px</span>
@@ -99,7 +99,7 @@
           type="number"
           min="0"
           max="500"
-          bind:value={config.display.margin_y}
+          bind:value={config.display.margins.y}
           onchange={onSave}
         />
         <span class="unit">px</span>
