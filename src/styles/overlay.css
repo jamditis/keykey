@@ -1,0 +1,14 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none;
+}
+
+#overlay {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}

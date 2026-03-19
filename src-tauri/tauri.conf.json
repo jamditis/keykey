@@ -12,9 +12,24 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "KeyKey",
         "width": 800,
         "height": 600
+      },
+      {
+        "label": "overlay",
+        "title": "",
+        "url": "/overlay",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "visible": true,
+        "focus": false,
+        "width": 400,
+        "height": 300
       }
     ],
     "security": {
