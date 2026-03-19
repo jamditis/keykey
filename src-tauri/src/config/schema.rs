@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DisplayMode {
@@ -93,6 +97,8 @@ pub struct AppConfig {
     pub input: InputConfig,
     pub appearance: AppearanceConfig,
     pub shortcuts: ShortcutConfig,
+    #[serde(default = "default_true")]
+    pub first_launch: bool,
 }
 
 impl Default for AppConfig {
@@ -128,6 +134,7 @@ impl Default for AppConfig {
                 switch_mode: None,
                 toggle_overlay: None,
             },
+            first_launch: true,
         }
     }
 }

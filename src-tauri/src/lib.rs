@@ -113,6 +113,27 @@ pub fn run() {
             }
 
             setup_tray(app)?;
+
+            // Open settings on first launch, then clear the flag
+            {
+                let config = config::store::load_config();
+                if config.first_launch {
+                    use tauri::WebviewUrl;
+                    let _ = tauri::WebviewWindowBuilder::new(
+                        app,
+                        "settings",
+                        WebviewUrl::App("/".into()),
+                    )
+                    .title("KeyKey settings")
+                    .inner_size(700.0, 500.0)
+                    .build();
+
+                    let mut updated = config;
+                    updated.first_launch = false;
+                    let _ = config::store::save_config(&updated);
+                }
+            }
+
             keyboard::listener::start_listener(app.handle().clone());
 
             // Background thread: reposition overlay based on position strategy
