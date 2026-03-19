@@ -1,3 +1,5 @@
+mod config;
+mod commands;
 mod keyboard;
 
 use tauri::{
@@ -95,6 +97,13 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(commands::ConfigState(std::sync::Mutex::new(
+            config::store::load_config(),
+        )))
+        .invoke_handler(tauri::generate_handler![
+            commands::get_config,
+            commands::save_config
+        ])
         .setup(|app| {
             if let Some(overlay) = app.get_webview_window("overlay") {
                 overlay.set_ignore_cursor_events(true)?;
