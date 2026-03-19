@@ -3,6 +3,7 @@ use serde::Serialize;
 use std::sync::mpsc;
 use std::thread;
 use tauri::{AppHandle, Emitter};
+use super::processor::EventProcessor;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct KeyEvent {
@@ -82,25 +83,41 @@ pub fn start_listener(app_handle: AppHandle) {
     });
 
     thread::spawn(move || {
+        let mut processor = EventProcessor::new();
+
         while let Ok(event) = rx.recv() {
-            let (key, event_type_str) = match &event.event_type {
-                EventType::KeyPress(k) => (k, "press"),
-                EventType::KeyRelease(k) => (k, "release"),
+            let (key, is_press) = match &event.event_type {
+                EventType::KeyPress(k) => (k, true),
+                EventType::KeyRelease(k) => (k, false),
                 _ => continue,
             };
 
-            let key_event = KeyEvent {
-                key: key_to_display_name(key, &event.name),
+            let display_name = key_to_display_name(key, &event.name);
+            let timestamp = event
+                .time
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64;
+
+            // Always emit raw key event (visual keyboard needs press/release)
+            let raw_event = KeyEvent {
+                key: display_name.clone(),
                 key_code: key_to_code(key),
-                event_type: event_type_str.to_string(),
-                timestamp: event
-                    .time
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_millis() as u64,
+                event_type: if is_press { "press" } else { "release" }.to_string(),
+                timestamp,
+            };
+            let _ = app_handle.emit("key-event", &raw_event);
+
+            // Emit processed display event (text stream uses this)
+            let display_event = if is_press {
+                processor.on_key_press(&display_name, timestamp)
+            } else {
+                processor.on_key_release(&display_name, timestamp)
             };
 
-            let _ = app_handle.emit("key-event", &key_event);
+            if let Some(evt) = display_event {
+                let _ = app_handle.emit("display-event", &evt);
+            }
         }
     });
 }
