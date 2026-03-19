@@ -1,3 +1,5 @@
+mod keyboard;
+
 use tauri::{
     Emitter, Manager,
     menu::{Menu, MenuItem, PredefinedMenuItem},
@@ -99,6 +101,7 @@ pub fn run() {
             }
 
             setup_tray(app)?;
+            keyboard::listener::start_listener(app.handle().clone());
 
             Ok(())
         })

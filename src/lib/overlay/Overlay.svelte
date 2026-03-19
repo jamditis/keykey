@@ -1,9 +1,32 @@
 <script lang="ts">
-  // Placeholder — will listen for key events in Task 5
+  import { listen } from '@tauri-apps/api/event';
+  import { onMount, onDestroy } from 'svelte';
+
+  interface KeyEvent {
+    key: string;
+    key_code: string;
+    event_type: string;
+    timestamp: number;
+  }
+
+  let lastKey = $state('waiting for input...');
+  let unlisten: (() => void) | null = null;
+
+  onMount(async () => {
+    unlisten = await listen<KeyEvent>('key-event', (event) => {
+      if (event.payload.event_type === 'press') {
+        lastKey = event.payload.key;
+      }
+    });
+  });
+
+  onDestroy(() => {
+    if (unlisten) unlisten();
+  });
 </script>
 
 <div class="overlay-container">
-  <div class="debug-label">KeyKey overlay active</div>
+  <div class="debug-label">{lastKey}</div>
 </div>
 
 <style>
