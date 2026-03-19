@@ -1,6 +1,7 @@
 mod config;
 mod commands;
 mod keyboard;
+mod monitor;
 
 use tauri::{
     Emitter, Manager,
@@ -102,7 +103,9 @@ pub fn run() {
         )))
         .invoke_handler(tauri::generate_handler![
             commands::get_config,
-            commands::save_config
+            commands::save_config,
+            commands::get_monitors,
+            commands::get_active_monitor,
         ])
         .setup(|app| {
             if let Some(overlay) = app.get_webview_window("overlay") {
@@ -111,6 +114,52 @@ pub fn run() {
 
             setup_tray(app)?;
             keyboard::listener::start_listener(app.handle().clone());
+
+            // Background thread: reposition overlay based on position strategy
+            {
+                use crate::config::schema::PositionStrategy;
+                use crate::commands::ConfigState;
+
+                let app_handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    let mut last_monitor_name = String::new();
+                    loop {
+                        let strategy = {
+                            let state = app_handle.state::<ConfigState>();
+                            let config = state.0.lock().unwrap();
+                            config.display.position_strategy.clone()
+                        };
+
+                        let target_monitor = match strategy {
+                            PositionStrategy::FollowActiveWindow => {
+                                monitor::tracker::platform::get_active_monitor()
+                            }
+                            PositionStrategy::FollowMouse => {
+                                monitor::tracker::platform::get_cursor_monitor()
+                            }
+                            PositionStrategy::Pinned => {
+                                std::thread::sleep(std::time::Duration::from_millis(500));
+                                continue;
+                            }
+                        };
+
+                        if let Some(m) = target_monitor {
+                            if m.name != last_monitor_name {
+                                last_monitor_name = m.name.clone();
+                                if let Some(overlay) = app_handle.get_webview_window("overlay") {
+                                    let x = m.work_x + m.work_width - 420;
+                                    let y = m.work_y + m.work_height - 320;
+                                    let _ = overlay.set_position(tauri::Position::Physical(
+                                        tauri::PhysicalPosition::new(x, y),
+                                    ));
+                                }
+                            }
+                        }
+
+                        std::thread::sleep(std::time::Duration::from_millis(250));
+                    }
+                });
+            }
 
             Ok(())
         })

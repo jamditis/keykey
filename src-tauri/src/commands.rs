@@ -1,4 +1,5 @@
 use crate::config::{schema::AppConfig, store};
+use crate::monitor::tracker::{self, MonitorInfo};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
@@ -19,4 +20,14 @@ pub fn save_config(
     *state.0.lock().unwrap() = config.clone();
     let _ = app.emit("config-changed", &config);
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_monitors() -> Vec<MonitorInfo> {
+    tracker::platform::enumerate_monitors()
+}
+
+#[tauri::command]
+pub fn get_active_monitor() -> Option<MonitorInfo> {
+    tracker::platform::get_active_monitor()
 }
