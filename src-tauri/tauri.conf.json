@@ -12,12 +12,6 @@
   "app": {
     "windows": [
       {
-        "label": "main",
-        "title": "KeyKey",
-        "width": 800,
-        "height": 600
-      },
-      {
         "label": "overlay",
         "title": "",
         "url": "/overlay",
