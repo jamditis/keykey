@@ -98,9 +98,14 @@ fn key_to_display_name(key: &Key, name: &Option<String>) -> String {
                 }
             }
 
-            // Use the OS-provided name if it's a printable character
+            // Use the OS-provided name if it contains ASCII-printable characters.
+            // is_control() alone is too permissive — it lets through zero-width chars,
+            // variation selectors, PUA chars, and other Unicode that lacks font glyphs
+            // and renders as boxes in the overlay.
             if let Some(n) = name {
-                let printable: String = n.chars().filter(|c| !c.is_control()).collect();
+                let printable: String = n.chars()
+                    .filter(|c| c.is_ascii_graphic() || *c == ' ')
+                    .collect();
                 if !printable.is_empty() {
                     return printable.to_uppercase();
                 }
@@ -241,4 +246,72 @@ pub fn start_listener(app_handle: AppHandle) {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_name_explicit_keys() {
+        assert_eq!(key_to_display_name(&Key::Return, &None), "Enter");
+        assert_eq!(key_to_display_name(&Key::Space, &None), "Space");
+        assert_eq!(key_to_display_name(&Key::BackQuote, &None), "`");
+        assert_eq!(key_to_display_name(&Key::LeftBracket, &None), "[");
+    }
+
+    #[test]
+    fn display_name_ascii_fallback() {
+        // Regular letter keys hit the fallback with an OS name
+        let name = Some("a".to_string());
+        let result = key_to_display_name(&Key::Unknown(65), &name);
+        assert_eq!(result, "A");
+    }
+
+    #[test]
+    fn display_name_rejects_non_ascii_unicode() {
+        // Zero-width joiner — invisible, renders as box
+        let name = Some("\u{200D}".to_string());
+        let result = key_to_display_name(&Key::Unknown(999), &name);
+        assert!(result.is_ascii(), "should not contain non-ASCII: got {:?}", result);
+    }
+
+    #[test]
+    fn display_name_rejects_variation_selectors() {
+        // Variation selector — invisible, renders as box
+        let name = Some("\u{FE0F}".to_string());
+        let result = key_to_display_name(&Key::Unknown(998), &name);
+        assert!(result.is_ascii(), "should not contain variation selectors: got {:?}", result);
+    }
+
+    #[test]
+    fn display_name_rejects_private_use_area() {
+        // Private use area char — no glyph in standard fonts
+        let name = Some("\u{E000}".to_string());
+        let result = key_to_display_name(&Key::Unknown(997), &name);
+        assert!(result.is_ascii(), "should not contain PUA chars: got {:?}", result);
+    }
+
+    #[test]
+    fn display_name_rejects_replacement_char() {
+        // U+FFFD replacement character — the box itself
+        let name = Some("\u{FFFD}".to_string());
+        let result = key_to_display_name(&Key::Unknown(996), &name);
+        assert!(result.is_ascii(), "should not contain replacement char: got {:?}", result);
+    }
+
+    #[test]
+    fn display_name_mixed_ascii_and_junk() {
+        // OS name with ASCII letter + zero-width chars
+        let name = Some("a\u{200B}\u{200D}".to_string());
+        let result = key_to_display_name(&Key::Unknown(995), &name);
+        assert_eq!(result, "A", "should keep only the ASCII letter");
+    }
+
+    #[test]
+    fn display_name_unknown_no_name() {
+        // No OS name, unknown key — should produce clean ASCII fallback
+        let result = key_to_display_name(&Key::Unknown(42), &None);
+        assert!(result.is_ascii(), "unknown key fallback should be ASCII: got {:?}", result);
+    }
 }
