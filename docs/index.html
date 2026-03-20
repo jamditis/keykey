@@ -218,6 +218,7 @@
       font-family: var(--font-mono); font-size: 12px;
       color: var(--text-muted); opacity: 0.6;
     }
+    .screen-titlebar-spacer { width: 30px; }
     .screen-body {
       padding: 28px 24px; min-height: 280px; position: relative;
       font-family: var(--font-mono); font-size: 14px; line-height: 1.9;
@@ -521,7 +522,7 @@
 
   <nav>
     <div class="nav-logo">Key<span>Key</span></div>
-    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
       <span></span><span></span><span></span>
     </button>
     <div class="nav-links" id="nav-links">
@@ -555,7 +556,7 @@
           <div class="screen-dot"></div>
           <div class="screen-dot"></div>
           <span class="screen-title">main.rs &mdash; keykey</span>
-          <div style="width: 30px;"></div>
+          <div class="screen-titlebar-spacer"></div>
         </div>
         <div class="screen-body">
           <div class="editor-lines" id="editor"></div>
@@ -768,34 +769,55 @@
     const toggle = document.getElementById('nav-toggle');
     const links = document.getElementById('nav-links');
     toggle.addEventListener('click', () => {
+      const isOpen = links.classList.toggle('open');
       toggle.classList.toggle('open');
-      links.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', isOpen);
     });
     links.querySelectorAll('a').forEach(a => {
       a.addEventListener('click', () => {
         toggle.classList.remove('open');
         links.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
       });
     });
 
-    /* Scroll reveal */
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    /* Scroll reveal with fallback */
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    } else {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+    }
 
-    /* Copy button */
+    /* Copy button with fallback */
     document.getElementById('copy-btn').addEventListener('click', function() {
-      const text = 'git clone https://github.com/jamditis/keykey.git\ncd keykey\nnpm install\nnpm run tauri build';
-      navigator.clipboard.writeText(text).then(() => {
-        this.textContent = 'copied';
-        setTimeout(() => { this.textContent = 'copy'; }, 2000);
-      });
+      const text = 'git clone https://github.com/jamditis/keykey.git\ncd keykey\nnpm install\nnpm run tauri build\n\n# or run in dev mode\nnpm run tauri dev';
+      const btn = this;
+      const setStatus = (label) => {
+        btn.textContent = label;
+        setTimeout(() => { btn.textContent = 'copy'; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => setStatus('copied')).catch(() => setStatus('error'));
+      } else {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.cssText = 'position:fixed;opacity:0;left:-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          setStatus('copied');
+        } catch (_) { setStatus('error'); }
+      }
     });
 
     /* ---- SCREEN DEMO ---- */
@@ -916,13 +938,24 @@
     setTimeout(typeNextChar, 1400);
 
     /* Interactive keypress handler */
-    const modifiers = new Set(['Control', 'Shift', 'Alt', 'Meta']);
+    const modifierKeys = new Set(['Control', 'Shift', 'Alt', 'Meta']);
     const heldMods = new Set();
+    /* Keys that should not be intercepted (accessibility + browser navigation) */
+    const passthrough = new Set(['Tab', 'F5', 'F11', 'F12']);
 
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      e.preventDefault();
-      if (modifiers.has(e.key)) { heldMods.add(e.key); return; }
+      if (modifierKeys.has(e.key)) { heldMods.add(e.key); return; }
+
+      /* Let Tab, F5, F11, F12, and browser shortcuts (Ctrl+L, Ctrl+R, etc.) through */
+      const hasCtrl = heldMods.has('Control');
+      const browserShortcut = hasCtrl && ['l', 'r', 't', 'w', 'n', 'f'].includes(e.key.toLowerCase());
+      if (passthrough.has(e.key) || browserShortcut) {
+        /* Still show it in the overlay, just don't block the default action */
+      } else {
+        e.preventDefault();
+      }
+
       const parts = [];
       if (heldMods.has('Control')) parts.push('Ctrl');
       if (heldMods.has('Shift')) parts.push('Shift');
@@ -938,6 +971,10 @@
     });
 
     document.addEventListener('keyup', (e) => { heldMods.delete(e.key); });
+    window.addEventListener('blur', () => { heldMods.clear(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') heldMods.clear();
+    });
   </script>
 </body>
 </html>
