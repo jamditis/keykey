@@ -36,6 +36,7 @@
       --font-display: 'Syne', sans-serif;
       --font-body: 'Outfit', sans-serif;
       --font-mono: 'IBM Plex Mono', monospace;
+      --content-max-width: 1100px;
     }
 
     html { scroll-behavior: smooth; }
@@ -82,7 +83,7 @@
       border-bottom: 1px solid rgba(37, 37, 54, 0.5);
     }
     .nav-inner {
-      max-width: 1100px; width: 100%;
+      max-width: var(--content-max-width); width: 100%;
       display: flex; align-items: center; justify-content: space-between;
     }
     .nav-logo {
@@ -280,7 +281,7 @@
 
     /* SHARED SECTION STYLES */
     .section-inner {
-      max-width: 1100px;
+      max-width: var(--content-max-width);
       margin: 0 auto;
     }
     .section-label {
