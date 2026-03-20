@@ -5,26 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KeyKey -- Keystroke visualizer for screen recordings</title>
   <meta name="description" content="Lightweight keystroke visualizer overlay for tutorials, demos, and screen recordings. Built with Tauri and Rust.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='15' width='80' height='70' rx='8' fill='%230a0a0f' stroke='%23f0c040' stroke-width='4'/><rect x='20' y='28' width='16' height='14' rx='3' fill='%23f0c040'/><rect x='42' y='28' width='16' height='14' rx='3' fill='%231a1a2a' stroke='%23f0c040' stroke-width='1.5'/><rect x='64' y='28' width='16' height='14' rx='3' fill='%231a1a2a' stroke='%23f0c040' stroke-width='1.5'/><rect x='20' y='50' width='16' height='14' rx='3' fill='%231a1a2a' stroke='%23f0c040' stroke-width='1.5'/><rect x='42' y='50' width='16' height='14' rx='3' fill='%231a1a2a' stroke='%23f0c040' stroke-width='1.5'/><rect x='64' y='50' width='16' height='14' rx='3' fill='%231a1a2a' stroke='%23f0c040' stroke-width='1.5'/></svg>">
+  <meta property="og:title" content="KeyKey -- Keystroke visualizer for screen recordings">
+  <meta property="og:description" content="Lightweight keystroke overlay for tutorials, demos, and screen recordings. Built with Tauri and Rust. Under 50MB, multi-monitor, fully themeable.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jamditis.github.io/keykey/">
+  <meta property="og:image" content="https://jamditis.github.io/keykey/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="KeyKey -- Keystroke visualizer for screen recordings">
+  <meta name="twitter:description" content="Lightweight keystroke overlay for tutorials, demos, and screen recordings. Built with Tauri and Rust.">
+  <meta name="twitter:image" content="https://jamditis.github.io/keykey/og-image.png">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='15' width='80' height='70' rx='8' fill='%23070709' stroke='%2322D47B' stroke-width='4'/><rect x='20' y='28' width='16' height='14' rx='3' fill='%2322D47B'/><rect x='42' y='28' width='16' height='14' rx='3' fill='%230E0F17' stroke='%2322D47B' stroke-width='1.5'/><rect x='64' y='28' width='16' height='14' rx='3' fill='%230E0F17' stroke='%2322D47B' stroke-width='1.5'/><rect x='20' y='50' width='16' height='14' rx='3' fill='%230E0F17' stroke='%2322D47B' stroke-width='1.5'/><rect x='42' y='50' width='16' height='14' rx='3' fill='%230E0F17' stroke='%2322D47B' stroke-width='1.5'/><rect x='64' y='50' width='16' height='14' rx='3' fill='%230E0F17' stroke='%2322D47B' stroke-width='1.5'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #0a0a0f;
-      --surface: #111118;
-      --surface-raised: #18182a;
-      --border: #2a2a3a;
-      --text: #e0ddd8;
-      --text-muted: #7a7880;
-      --accent: #f0c040;
-      --accent-dim: rgba(240, 192, 64, 0.12);
-      --accent-glow: rgba(240, 192, 64, 0.06);
-      --font-display: 'Bricolage Grotesque', sans-serif;
-      --font-body: 'Instrument Sans', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
+      --bg: #07070B;
+      --surface: #0E0F17;
+      --surface-raised: #161725;
+      --border: #252536;
+      --text: #E6E1D8;
+      --text-muted: #6E6D7A;
+      --accent: #22D47B;
+      --accent-dim: rgba(34, 212, 123, 0.10);
+      --combo: #FF5C8A;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
     }
 
     html { scroll-behavior: smooth; }
@@ -35,16 +46,17 @@
       font-family: var(--font-body);
       font-size: 17px;
       line-height: 1.6;
+      font-weight: 400;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       overflow-x: hidden;
     }
 
-    /* Noise texture overlay */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
       pointer-events: none;
       z-index: 9999;
     }
@@ -52,836 +64,695 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
-    /* ---- NAV ---- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* NAV */
     nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 18px 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(10, 10, 15, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 0 40px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(7, 7, 11, 0.8);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(37, 37, 54, 0.5);
     }
-
     .nav-logo {
-      font-family: var(--font-display);
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -0.03em;
+      font-family: var(--font-display); font-size: 24px; font-weight: 800;
+      color: var(--text); letter-spacing: -0.04em;
     }
-
     .nav-logo span { color: var(--accent); }
-
-    .nav-links {
-      display: flex;
-      gap: 32px;
-      align-items: center;
-    }
-
+    .nav-links { display: flex; gap: 36px; align-items: center; }
     .nav-links a {
-      color: var(--text-muted);
-      font-size: 14px;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      transition: color 0.2s;
+      color: var(--text-muted); font-size: 14px; font-weight: 500;
+      letter-spacing: 0.01em; transition: color 0.2s;
     }
-
     .nav-links a:hover { color: var(--text); text-decoration: none; }
-
     .nav-cta {
-      background: var(--accent) !important;
-      color: var(--bg) !important;
-      padding: 8px 20px;
-      border-radius: 6px;
-      font-weight: 600 !important;
-      font-size: 13px !important;
-      letter-spacing: 0.01em;
+      background: var(--accent) !important; color: var(--bg) !important;
+      padding: 8px 20px; border-radius: 8px;
+      font-weight: 600 !important; font-size: 13px !important;
       transition: transform 0.15s, box-shadow 0.15s;
     }
-
     .nav-cta:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 20px rgba(240, 192, 64, 0.3);
+      box-shadow: 0 4px 24px rgba(34, 212, 123, 0.25);
       text-decoration: none !important;
     }
-
-    /* ---- HERO ---- */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      padding: 140px 60px 80px;
-      position: relative;
-      overflow: hidden;
+    .nav-toggle {
+      display: none; background: none; border: none; cursor: pointer;
+      padding: 8px; flex-direction: column; gap: 5px;
     }
+    .nav-toggle span {
+      display: block; width: 22px; height: 2px; background: var(--text);
+      border-radius: 2px; transition: transform 0.3s, opacity 0.3s;
+    }
+    .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-toggle.open span:nth-child(2) { opacity: 0; }
+    .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
+    /* HERO */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 100px 40px 60px; position: relative;
+      overflow: hidden; text-align: center;
+    }
     .hero::before {
-      content: '';
-      position: absolute;
-      top: -200px;
-      right: -100px;
-      width: 700px;
-      height: 700px;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      content: ''; position: absolute; top: -20%; left: 50%;
+      transform: translateX(-50%); width: 800px; height: 600px;
+      background: radial-gradient(ellipse, rgba(34, 212, 123, 0.06) 0%, transparent 70%);
       pointer-events: none;
     }
-
-    .hero-content {
-      max-width: 680px;
-      position: relative;
-      z-index: 1;
+    .hero::after {
+      content: ''; position: absolute; bottom: -10%; left: 30%;
+      width: 500px; height: 400px;
+      background: radial-gradient(ellipse, rgba(255, 92, 138, 0.03) 0%, transparent 70%);
+      pointer-events: none;
     }
-
     .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--accent-dim);
-      border: 1px solid rgba(240, 192, 64, 0.2);
-      border-radius: 100px;
-      padding: 6px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--accent);
-      margin-bottom: 32px;
-      animation: fadeUp 0.6s ease both;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent-dim); border: 1px solid rgba(34, 212, 123, 0.18);
+      border-radius: 100px; padding: 6px 18px;
+      font-size: 13px; font-weight: 500; color: var(--accent);
+      margin-bottom: 36px; animation: fadeUp 0.6s ease both;
     }
-
     .hero-badge::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 8px var(--accent);
       animation: pulse 2s ease infinite;
     }
-
     .hero h1 {
       font-family: var(--font-display);
-      font-size: clamp(52px, 6vw, 80px);
-      font-weight: 800;
-      line-height: 0.95;
-      letter-spacing: -0.04em;
-      color: var(--text);
-      margin-bottom: 28px;
-      animation: fadeUp 0.6s ease 0.1s both;
+      font-size: clamp(48px, 7vw, 96px); font-weight: 800;
+      line-height: 0.95; letter-spacing: -0.05em;
+      margin-bottom: 28px; animation: fadeUp 0.6s ease 0.1s both;
     }
-
     .hero h1 em {
       font-style: normal;
-      color: var(--accent);
-      position: relative;
+      background: linear-gradient(135deg, var(--accent), #4AF5A0);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-
-    .hero h1 em::after {
-      content: '';
-      position: absolute;
-      bottom: 2px;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: var(--accent);
-      opacity: 0.4;
-      border-radius: 2px;
-    }
-
     .hero-sub {
-      font-size: 19px;
-      color: var(--text-muted);
-      line-height: 1.65;
-      max-width: 520px;
-      margin-bottom: 44px;
-      animation: fadeUp 0.6s ease 0.2s both;
+      font-size: clamp(16px, 2vw, 20px); color: var(--text-muted);
+      line-height: 1.65; max-width: 560px; margin: 0 auto 48px;
+      font-weight: 300; animation: fadeUp 0.6s ease 0.2s both;
     }
-
     .hero-actions {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      animation: fadeUp 0.6s ease 0.3s both;
+      display: flex; gap: 16px; justify-content: center;
+      flex-wrap: wrap; animation: fadeUp 0.6s ease 0.3s both;
     }
-
     .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--accent);
-      color: var(--bg);
-      padding: 14px 28px;
-      border-radius: 8px;
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      border: none;
-      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--accent); color: var(--bg);
+      padding: 14px 32px; border-radius: 10px;
+      font-family: var(--font-body); font-size: 15px; font-weight: 600;
+      border: none; cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
     }
-
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(240, 192, 64, 0.25);
-      text-decoration: none;
-      color: var(--bg);
+      box-shadow: 0 8px 32px rgba(34, 212, 123, 0.3);
+      text-decoration: none; color: var(--bg);
     }
-
     .btn-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--surface-raised);
-      color: var(--text);
-      padding: 14px 28px;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 500;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--text);
+      padding: 14px 32px; border-radius: 10px;
+      font-size: 15px; font-weight: 500;
       border: 1px solid var(--border);
       transition: border-color 0.2s, background 0.2s;
     }
-
     .btn-secondary:hover {
-      border-color: var(--accent);
-      background: var(--accent-dim);
+      border-color: var(--accent); background: var(--accent-dim);
       text-decoration: none;
     }
 
-    /* ---- DEMO OVERLAY ---- */
-    .hero-demo {
-      position: absolute;
-      right: 60px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 380px;
-      z-index: 1;
-      animation: fadeUp 0.8s ease 0.4s both;
+    /* SCREEN MOCKUP */
+    .hero-screen {
+      width: 100%; max-width: 720px; margin-top: 56px;
+      animation: fadeUp 0.8s ease 0.5s both; position: relative; z-index: 1;
+    }
+    .screen-frame {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5),
+                  0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    }
+    .screen-titlebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 18px; background: rgba(22, 23, 37, 0.8);
+      border-bottom: 1px solid var(--border);
+    }
+    .screen-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+    .screen-dot:nth-child(1) { background: #FF5F57; }
+    .screen-dot:nth-child(2) { background: #FEBC2E; }
+    .screen-dot:nth-child(3) { background: #28C840; }
+    .screen-title {
+      flex: 1; text-align: center;
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--text-muted); opacity: 0.6;
+    }
+    .screen-titlebar-spacer { width: 30px; }
+    .screen-body {
+      padding: 28px 24px; min-height: 280px; position: relative;
+      font-family: var(--font-mono); font-size: 14px; line-height: 1.9;
+    }
+    .editor-lines { color: var(--text-muted); opacity: 0.7; }
+    .editor-lines .ln {
+      color: var(--text-muted); opacity: 0.3;
+      display: inline-block; width: 28px; text-align: right;
+      margin-right: 16px; user-select: none;
+    }
+    .editor-lines .kw { color: #C792EA; }
+    .editor-lines .fn { color: #82AAFF; }
+    .editor-lines .str { color: #C3E88D; }
+    .editor-lines .ty { color: #FFCB6B; }
+    .editor-lines .cm { color: #546E7A; }
+    .editor-lines .op { color: #89DDFF; }
+    .editor-cursor {
+      display: inline-block; width: 2px; height: 18px;
+      background: var(--accent); box-shadow: 0 0 6px var(--accent);
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom; margin-left: 1px;
     }
 
-    .demo-screen {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      position: relative;
-      min-height: 300px;
+    /* Overlay preview */
+    .screen-overlay {
+      position: absolute; bottom: 20px; right: 20px;
+      display: flex; flex-direction: column; align-items: flex-end;
+      gap: 4px; z-index: 2;
+    }
+    .overlay-key {
+      background: rgba(14, 15, 23, 0.92);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      color: var(--text); padding: 5px 14px; border-radius: 8px;
+      font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      opacity: 0; transform: translateY(6px) scale(0.95);
+      animation: keyIn 0.2s ease forwards; white-space: nowrap;
+    }
+    .overlay-key.combo {
+      color: var(--combo); border-color: rgba(255, 92, 138, 0.12);
+    }
+    .overlay-key.fading { animation: keyOut 0.4s ease forwards; }
+    .type-hint {
+      text-align: center; margin-top: 20px;
+      font-size: 13px; color: var(--text-muted);
+      opacity: 0; animation: fadeUp 0.5s ease 3.5s both;
+    }
+    .type-hint kbd {
+      display: inline-block; background: var(--surface-raised);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 2px 8px; font-family: var(--font-mono); font-size: 12px;
+      color: var(--text); margin: 0 2px;
     }
 
-    .demo-screen::before {
-      content: 'Screen recording';
-      position: absolute;
-      top: 10px;
-      left: 16px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      opacity: 0.5;
-    }
-
-    .demo-dots {
-      display: flex;
-      gap: 6px;
-      position: absolute;
-      top: 10px;
-      right: 16px;
-    }
-
-    .demo-dots span {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--border);
-    }
-
-    .demo-dots span:first-child { background: #e55; }
-
-    .demo-overlay {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 5px;
-    }
-
-    .demo-key {
-      background: rgba(15, 15, 20, 0.88);
-      color: #e8e8e8;
-      padding: 6px 14px;
-      border-radius: 7px;
-      font-family: var(--font-mono);
-      font-size: 14px;
-      font-weight: 500;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-      opacity: 0;
-      transform: translateY(8px);
-      animation: keyAppear 0.2s ease forwards;
-      white-space: nowrap;
-    }
-
-    .demo-key.combo {
-      font-weight: 600;
-      color: var(--accent);
-      border-color: rgba(240, 192, 64, 0.15);
-    }
-
-    .demo-key.fading {
-      animation: keyFade 0.5s ease forwards;
-    }
-
-    /* Fake editor lines in the demo */
-    .demo-editor {
-      margin-top: 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .demo-line {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-    }
-
-    .demo-line .ln {
-      color: var(--text-muted);
-      opacity: 0.3;
-      width: 24px;
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    .demo-line .code {
-      color: var(--text-muted);
-      opacity: 0.5;
-    }
-
-    .demo-line .code .kw { color: #c59af5; opacity: 1; }
-    .demo-line .code .fn { color: #7dc9f0; opacity: 1; }
-    .demo-line .code .str { color: #a8d4a0; opacity: 1; }
-
-    /* ---- FEATURES ---- */
-    .features {
-      padding: 120px 60px;
-      position: relative;
-    }
-
-    .features::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
-    }
-
+    /* SHARED SECTION STYLES */
     .section-label {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--accent);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 16px;
+      font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+      color: var(--accent); letter-spacing: 0.14em;
+      text-transform: uppercase; margin-bottom: 16px;
     }
-
     .section-title {
       font-family: var(--font-display);
-      font-size: clamp(36px, 4vw, 52px);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-bottom: 60px;
-      max-width: 600px;
+      font-size: clamp(32px, 4.5vw, 56px); font-weight: 800;
+      letter-spacing: -0.04em; line-height: 1.05; margin-bottom: 24px;
+    }
+    .section-desc {
+      font-size: 17px; color: var(--text-muted); max-width: 520px;
+      line-height: 1.7; font-weight: 300; margin-bottom: 64px;
+    }
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
     }
 
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
+    /* FEATURES */
+    .features { padding: 120px 40px; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .feature-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 36px 32px;
-      transition: border-color 0.3s, transform 0.3s;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px 32px;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      position: relative; overflow: hidden;
     }
-
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--accent);
-      opacity: 0;
-      transition: opacity 0.3s;
+    .feature-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0; transition: opacity 0.3s;
     }
-
     .feature-card:hover {
-      border-color: rgba(240, 192, 64, 0.3);
+      border-color: rgba(34, 212, 123, 0.2);
       transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
     }
-
-    .feature-card:hover::before { opacity: 1; }
-
+    .feature-card:hover::after { opacity: 1; }
     .feature-icon {
-      width: 44px;
-      height: 44px;
-      background: var(--accent-dim);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      font-size: 20px;
+      width: 48px; height: 48px; background: var(--accent-dim);
+      border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; margin-bottom: 24px;
     }
-
     .feature-card h3 {
-      font-family: var(--font-display);
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      letter-spacing: -0.02em;
+      font-family: var(--font-display); font-size: 20px; font-weight: 700;
+      margin-bottom: 10px; letter-spacing: -0.02em;
     }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
 
-    .feature-card p {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.6;
+    /* PIPELINE */
+    .pipeline { padding: 120px 40px; }
+    .pipeline-flow {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; margin-top: 64px; position: relative;
     }
-
-    /* ---- HOW IT WORKS ---- */
-    .how-it-works {
-      padding: 120px 60px;
-      position: relative;
-    }
-
-    .how-it-works::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+    .pipeline-step { text-align: center; padding: 0 20px; position: relative; }
+    .pipeline-step:not(:last-child)::after {
+      content: ''; position: absolute; top: 32px; right: -1px;
+      width: calc(100% - 80px); left: calc(50% + 40px);
       height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      background: linear-gradient(90deg, var(--accent), var(--border));
+      opacity: 0.4;
+    }
+    .step-icon {
+      width: 64px; height: 64px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; font-family: var(--font-mono);
+      font-size: 13px; font-weight: 500; color: var(--accent);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .pipeline-step:hover .step-icon {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(34, 212, 123, 0.15);
+    }
+    .pipeline-step h3 {
+      font-family: var(--font-display); font-size: 18px;
+      font-weight: 700; margin-bottom: 8px;
+    }
+    .pipeline-step p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .pipeline-step .step-tech {
+      display: inline-block; margin-top: 12px;
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--accent); background: var(--accent-dim);
+      padding: 3px 10px; border-radius: 6px;
     }
 
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 40px;
-      margin-top: 60px;
+    /* COMPARISON */
+    .comparison { padding: 120px 40px; }
+    .comparison-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 16px; margin-top: 64px;
     }
-
-    .step {
-      position: relative;
+    .comp-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px 28px; position: relative;
     }
-
-    .step-num {
-      font-family: var(--font-display);
-      font-size: 72px;
-      font-weight: 800;
-      color: var(--accent);
-      opacity: 0.12;
-      line-height: 1;
-      margin-bottom: -10px;
+    .comp-card.featured {
+      border-color: rgba(34, 212, 123, 0.3);
+      background: linear-gradient(180deg, rgba(34, 212, 123, 0.04) 0%, var(--surface) 100%);
     }
-
-    .step h3 {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      letter-spacing: -0.01em;
+    .comp-card.featured::before {
+      content: 'You are here'; position: absolute; top: -12px; left: 24px;
+      background: var(--accent); color: var(--bg);
+      font-size: 11px; font-weight: 600; padding: 3px 12px;
+      border-radius: 6px; font-family: var(--font-mono);
     }
-
-    .step p {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.6;
+    .comp-card h3 {
+      font-family: var(--font-display); font-size: 22px;
+      font-weight: 700; margin-bottom: 6px;
     }
-
-    /* ---- COMPARISON ---- */
-    .comparison {
-      padding: 120px 60px;
-      position: relative;
+    .comp-card .comp-stack {
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--text-muted); margin-bottom: 24px;
     }
-
-    .comparison::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    .comp-card ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .comp-card li {
+      font-size: 14px; color: var(--text-muted);
+      display: flex; align-items: flex-start; gap: 10px; line-height: 1.5;
     }
-
-    .comparison-table {
-      width: 100%;
-      max-width: 800px;
-      border-collapse: collapse;
-      margin-top: 60px;
-      font-size: 14px;
+    .comp-card li .check {
+      flex-shrink: 0; margin-top: 2px; width: 18px; height: 18px;
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 11px;
     }
+    .comp-card.featured li .check { background: var(--accent-dim); color: var(--accent); }
+    .comp-card:not(.featured) li .check { background: var(--surface-raised); color: var(--text-muted); }
 
-    .comparison-table th {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-align: left;
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+    /* INSTALL */
+    .install { padding: 120px 40px; }
+    .install-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: start; margin-top: 64px;
     }
-
-    .comparison-table td {
-      padding: 14px 20px;
-      border-bottom: 1px solid rgba(42, 42, 58, 0.5);
-      color: var(--text-muted);
-    }
-
-    .comparison-table tr td:first-child {
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    .comparison-table .highlight {
-      color: var(--accent);
-      font-weight: 500;
-    }
-
-    /* ---- GET STARTED ---- */
-    .get-started {
-      padding: 120px 60px;
-      position: relative;
-    }
-
-    .get-started::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
-    }
-
     .code-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 24px 28px;
-      font-family: var(--font-mono);
-      font-size: 14px;
-      line-height: 1.8;
-      max-width: 560px;
-      margin-top: 40px;
-      color: var(--text-muted);
-      overflow-x: auto;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
     }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px; background: rgba(22, 23, 37, 0.6);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-header span { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+    .copy-btn {
+      background: var(--surface-raised); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 12px;
+      font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+      cursor: pointer; transition: color 0.2s, border-color 0.2s;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .code-body {
+      padding: 20px 24px; font-family: var(--font-mono);
+      font-size: 14px; line-height: 2; color: var(--text-muted);
+    }
+    .code-body .cmd { color: var(--accent); }
+    .code-body .comment { opacity: 0.4; }
+    .install-info h3 {
+      font-family: var(--font-display); font-size: 24px;
+      font-weight: 700; margin-bottom: 16px;
+    }
+    .install-info p {
+      font-size: 15px; color: var(--text-muted);
+      line-height: 1.7; margin-bottom: 24px; font-weight: 300;
+    }
+    .req-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .req-list li { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-muted); }
+    .req-list li .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 
-    .code-block .cmd { color: var(--accent); }
-    .code-block .comment { color: var(--text-muted); opacity: 0.4; }
-
-    /* ---- FOOTER ---- */
+    /* FOOTER */
     footer {
-      padding: 60px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 48px 40px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
     }
-
-    .footer-left {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .footer-left strong {
-      color: var(--text);
-      font-family: var(--font-display);
-      font-weight: 600;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .footer-links a {
-      color: var(--text-muted);
-      font-size: 13px;
-      transition: color 0.2s;
-    }
-
+    .footer-left { font-size: 14px; color: var(--text-muted); }
+    .footer-left strong { color: var(--text); font-family: var(--font-display); font-weight: 700; }
+    .footer-links { display: flex; gap: 28px; }
+    .footer-links a { color: var(--text-muted); font-size: 13px; font-weight: 500; transition: color 0.2s; }
     .footer-links a:hover { color: var(--accent); text-decoration: none; }
 
-    /* ---- ANIMATIONS ---- */
+    /* ANIMATIONS */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    @keyframes keyAppear {
-      from { opacity: 0; transform: translateY(8px) scale(0.95); }
+    @keyframes keyIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.95); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
-
-    @keyframes keyFade {
-      from { opacity: 1; }
-      to { opacity: 0; }
+    @keyframes keyOut {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.95); }
     }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    /* ---- RESPONSIVE ---- */
-    @media (max-width: 1100px) {
-      .hero-demo { display: none; }
-      .hero { padding: 140px 40px 80px; }
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
       .feature-grid { grid-template-columns: repeat(2, 1fr); }
-      .steps { grid-template-columns: repeat(2, 1fr); }
+      .pipeline-flow { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+      .pipeline-step:not(:last-child)::after { display: none; }
+      .comparison-cards { grid-template-columns: 1fr; max-width: 480px; }
+      .install-grid { grid-template-columns: 1fr; gap: 40px; }
     }
-
-    @media (max-width: 700px) {
-      nav { padding: 14px 20px; }
-      .nav-links { gap: 16px; }
-      .hero { padding: 120px 24px 60px; }
-      .features, .how-it-works, .comparison, .get-started { padding: 80px 24px; }
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-links {
+        position: fixed; top: 64px; left: 0; right: 0;
+        background: rgba(7, 7, 11, 0.96);
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        flex-direction: column; padding: 24px; gap: 20px;
+        border-bottom: 1px solid var(--border);
+        transform: translateY(-100%); opacity: 0; pointer-events: none;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+      }
+      .nav-links.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+      .nav-links a { font-size: 16px; }
+      .nav-toggle { display: flex; }
+      .hero { padding: 100px 24px 48px; min-height: auto; }
+      .hero h1 { font-size: clamp(40px, 10vw, 64px); }
+      .hero-sub { font-size: 16px; }
+      .hero-screen { margin-top: 40px; }
+      .screen-body { padding: 20px 16px; min-height: 220px; font-size: 12px; }
+      .type-hint { display: none; }
+      .features, .pipeline, .comparison, .install { padding: 80px 24px; }
       .feature-grid { grid-template-columns: 1fr; }
-      .steps { grid-template-columns: 1fr; gap: 24px; }
-      .hero-actions { flex-direction: column; align-items: flex-start; }
-      footer { flex-direction: column; gap: 20px; text-align: center; }
+      .pipeline-flow { grid-template-columns: 1fr; gap: 32px; }
+      .hero-actions { flex-direction: column; width: 100%; }
+      .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+      footer { flex-direction: column; gap: 20px; text-align: center; padding: 40px 24px; }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+    }
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 36px; }
+      .screen-body { font-size: 11px; line-height: 1.7; }
+      .screen-body .ln { width: 20px; margin-right: 10px; }
+      .section-title { font-size: 28px; }
+      .comp-card { padding: 24px 20px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
   <nav>
     <div class="nav-logo">Key<span>Key</span></div>
-    <div class="nav-links">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links" id="nav-links">
       <a href="#features">Features</a>
-      <a href="#how-it-works">How it works</a>
-      <a href="#get-started">Get started</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#comparison">Comparison</a>
+      <a href="#install">Install</a>
       <a href="https://github.com/jamditis/keykey" class="nav-cta">GitHub</a>
     </div>
   </nav>
 
-  <!-- HERO -->
   <section class="hero">
-    <div class="hero-content">
-      <div class="hero-badge">Open source &middot; MIT license</div>
-      <h1>Show every<br><em>keystroke</em></h1>
-      <p class="hero-sub">
-        Floating overlay that displays your keyboard input during screen recordings,
-        tutorials, and live demos. Lightweight, themeable, multi-monitor aware.
-      </p>
-      <div class="hero-actions">
-        <a href="https://github.com/jamditis/keykey" class="btn-primary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          View on GitHub
-        </a>
-        <a href="#get-started" class="btn-secondary">Get started</a>
+    <div class="hero-badge">Open source &middot; MIT license</div>
+    <h1>Show every<br><em>keystroke</em></h1>
+    <p class="hero-sub">
+      A floating overlay that displays your keyboard input during screen recordings,
+      tutorials, and live demos. Under 50MB. Multi-monitor. Fully themeable.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/jamditis/keykey" class="btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+      <a href="#install" class="btn-secondary">Build from source</a>
+    </div>
+
+    <div class="hero-screen">
+      <div class="screen-frame">
+        <div class="screen-titlebar">
+          <div class="screen-dot"></div>
+          <div class="screen-dot"></div>
+          <div class="screen-dot"></div>
+          <span class="screen-title">main.rs &mdash; keykey</span>
+          <div class="screen-titlebar-spacer"></div>
+        </div>
+        <div class="screen-body">
+          <div class="editor-lines" id="editor"></div>
+          <div class="screen-overlay" id="screen-overlay"></div>
+        </div>
       </div>
     </div>
 
-    <div class="hero-demo">
-      <div class="demo-screen">
-        <div class="demo-dots"><span></span><span></span><span></span></div>
-        <div class="demo-editor">
-          <div class="demo-line"><span class="ln">14</span><span class="code"><span class="kw">fn</span> <span class="fn">main</span>() {</span></div>
-          <div class="demo-line"><span class="ln">15</span><span class="code">    <span class="kw">let</span> app = App::<span class="fn">new</span>();</span></div>
-          <div class="demo-line"><span class="ln">16</span><span class="code">    app.<span class="fn">run</span>(<span class="str">"keykey"</span>);</span></div>
-          <div class="demo-line"><span class="ln">17</span><span class="code">}</span></div>
-        </div>
-        <div class="demo-overlay" id="demo-overlay"></div>
-      </div>
+    <div class="type-hint">
+      Press any key to try it &mdash; <kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Shift</kbd>+<kbd>Tab</kbd>, or just type
     </div>
   </section>
 
-  <!-- FEATURES -->
-  <section class="features" id="features">
-    <div class="section-label">Features</div>
-    <h2 class="section-title">Built for people who make tutorials</h2>
+  <div class="section-divider"></div>
 
+  <section class="features" id="features">
+    <div class="reveal">
+      <div class="section-label">Features</div>
+      <h2 class="section-title">Built for people who<br>make tutorials</h2>
+      <p class="section-desc">
+        KeyKey sits in the corner of your screen and shows viewers what you're typing.
+        No Electron. No Java. Just a native overlay that stays out of your way.
+      </p>
+    </div>
     <div class="feature-grid">
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         </div>
         <h3>Two display modes</h3>
-        <p>Text stream shows stacked key labels that fade out. Visual keyboard highlights keys on a rendered layout. Switch between them from the tray menu or a hotkey.</p>
+        <p>Text stream shows stacked key labels that fade out. Visual keyboard highlights keys on a rendered layout. Switch with a hotkey or from the tray menu.</p>
       </div>
-
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
         </div>
         <h3>Smart modifier handling</h3>
-        <p>Filters incidental Shift taps during typing but catches intentional holds. Per-modifier overrides: always show, never show, combo only, or smart mode with a configurable threshold.</p>
+        <p>Filters incidental Shift taps during typing but catches intentional holds. Per-modifier overrides: always show, never show, combo only, or smart mode.</p>
       </div>
-
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="9" y="3" width="6" height="14" rx="0"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="9" y="3" width="6" height="14" rx="0"/></svg>
         </div>
         <h3>Multi-monitor</h3>
-        <p>Follows the active window, follows the mouse cursor, or pins to a specific monitor and corner. Re-queries monitor geometry on every focus change. DPI-aware.</p>
+        <p>Follow the active window, follow the mouse, or pin to a corner. Re-queries monitor geometry on every focus change. DPI-aware positioning.</p>
       </div>
-
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
         </div>
         <h3>Full theme system</h3>
-        <p>5 built-in presets. Every visual property is a CSS variable: fonts, colors, opacity, borders, shadows, animations. Changes apply instantly. Import and export themes as JSON.</p>
+        <p>5 built-in presets. Every visual property is a CSS variable: fonts, colors, opacity, borders, shadows. Import and export themes as JSON.</p>
       </div>
-
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
         <h3>Lightweight</h3>
-        <p>Under 15MB installed, under 50MB memory. Uses the native WebView2 runtime instead of bundling Chromium. Less than 1% CPU when idle, under 3% during continuous typing.</p>
+        <p>Under 15MB installed. Under 50MB memory. Uses native WebView2 instead of bundling Chromium. Less than 1% CPU when idle, under 3% during continuous typing.</p>
       </div>
-
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
         </div>
         <h3>System tray + hotkeys</h3>
-        <p>Launches to tray, starts capturing immediately. All functions accessible from the tray menu. Optional global hotkeys with no hardcoded defaults, so nothing conflicts with your existing shortcuts.</p>
+        <p>Launches to tray, starts capturing immediately. Optional global hotkeys with no hardcoded defaults, so nothing conflicts with your workflow.</p>
       </div>
     </div>
   </section>
 
-  <!-- HOW IT WORKS -->
-  <section class="how-it-works" id="how-it-works">
-    <div class="section-label">Architecture</div>
-    <h2 class="section-title">How it works</h2>
+  <div class="section-divider"></div>
 
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">01</div>
+  <section class="pipeline" id="architecture">
+    <div class="reveal">
+      <div class="section-label">Architecture</div>
+      <h2 class="section-title">How it works</h2>
+      <p class="section-desc">
+        Four stages from physical keypress to rendered overlay. The Rust backend handles
+        capture and processing; the Svelte frontend handles display.
+      </p>
+    </div>
+    <div class="pipeline-flow reveal">
+      <div class="pipeline-step">
+        <div class="step-icon">01</div>
         <h3>Capture</h3>
-        <p>rdev installs a global keyboard hook via Win32 SetWindowsHookEx. Every key press and release is captured regardless of which window has focus.</p>
+        <p>rdev installs a global keyboard hook. Every press and release is captured regardless of which window has focus.</p>
+        <span class="step-tech">Win32 hook</span>
       </div>
-      <div class="step">
-        <div class="step-num">02</div>
+      <div class="pipeline-step">
+        <div class="step-icon">02</div>
         <h3>Process</h3>
-        <p>A Rust event processor applies smart mode logic: modifier hold timing, combo detection (Ctrl+Shift+S), repeat compression (A x3), and per-modifier filtering.</p>
+        <p>Smart mode logic: modifier hold timing, combo detection (Ctrl+Shift+S), repeat compression (A x3).</p>
+        <span class="step-tech">Rust</span>
       </div>
-      <div class="step">
-        <div class="step-num">03</div>
+      <div class="pipeline-step">
+        <div class="step-icon">03</div>
         <h3>Emit</h3>
-        <p>Processed events are sent to the frontend via Tauri's IPC event system. Two channels run in parallel: raw events for visual keyboard, processed events for text stream.</p>
+        <p>Processed events sent to the frontend via Tauri IPC. Two channels: raw for visual keyboard, processed for text stream.</p>
+        <span class="step-tech">Tauri v2</span>
       </div>
-      <div class="step">
-        <div class="step-num">04</div>
+      <div class="pipeline-step">
+        <div class="step-icon">04</div>
         <h3>Render</h3>
-        <p>The SvelteKit overlay renders keystrokes using the active display mode and theme. The overlay window is transparent, frameless, always-on-top, and click-through.</p>
+        <p>SvelteKit overlay renders keystrokes. Transparent, frameless, always-on-top, click-through window.</p>
+        <span class="step-tech">Svelte 5</span>
       </div>
     </div>
   </section>
 
-  <!-- COMPARISON -->
+  <div class="section-divider"></div>
+
   <section class="comparison" id="comparison">
-    <div class="section-label">Comparison</div>
-    <h2 class="section-title">Why another keystroke visualizer?</h2>
-
-    <table class="comparison-table">
-      <thead>
-        <tr>
-          <th></th>
-          <th>KeyKey</th>
-          <th>KeyViz</th>
-          <th>Carnac</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Multi-monitor</td>
-          <td class="highlight">Re-queries on every focus change</td>
-          <td>Caches at startup (breaks on monitor switch)</td>
-          <td>Single monitor only</td>
-        </tr>
-        <tr>
-          <td>Memory</td>
-          <td class="highlight">&lt;50MB (WebView2)</td>
-          <td>~200MB (Electron)</td>
-          <td>~30MB (.NET)</td>
-        </tr>
-        <tr>
-          <td>Themes</td>
-          <td class="highlight">Full CSS variable system, hot-reload</td>
-          <td>Basic color picker</td>
-          <td>Minimal</td>
-        </tr>
-        <tr>
-          <td>Display modes</td>
-          <td class="highlight">Text stream + visual keyboard</td>
-          <td>Text stream</td>
-          <td>Text stream</td>
-        </tr>
-        <tr>
-          <td>Modifier handling</td>
-          <td class="highlight">Smart mode + per-modifier overrides</td>
-          <td>Basic filtering</td>
-          <td>Show all or nothing</td>
-        </tr>
-        <tr>
-          <td>Stack</td>
-          <td>Tauri v2 + Rust + Svelte</td>
-          <td>Electron + React</td>
-          <td>.NET WPF</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- GET STARTED -->
-  <section class="get-started" id="get-started">
-    <div class="section-label">Install</div>
-    <h2 class="section-title">Build from source</h2>
-
-    <div class="code-block">
-      <span class="comment"># Clone and build</span><br>
-      <span class="cmd">git clone</span> https://github.com/jamditis/keykey.git<br>
-      <span class="cmd">cd</span> keykey<br>
-      <span class="cmd">npm install</span><br>
-      <span class="cmd">npm run tauri build</span><br>
-      <br>
-      <span class="comment"># Or run in dev mode</span><br>
-      <span class="cmd">npm run tauri dev</span>
+    <div class="reveal">
+      <div class="section-label">Comparison</div>
+      <h2 class="section-title">Why another keystroke<br>visualizer?</h2>
+      <p class="section-desc">
+        Existing tools either bundle Electron or are stuck on legacy .NET frameworks.
+        KeyKey uses Tauri for native performance with a modern frontend.
+      </p>
     </div>
-
-    <p style="margin-top: 24px; font-size: 14px; color: var(--text-muted);">
-      Requires <a href="https://nodejs.org/">Node.js</a> 18+ and <a href="https://rustup.rs/">Rust</a> (stable). Windows 10/11 only for now &mdash; macOS support is planned.
-    </p>
+    <div class="comparison-cards reveal">
+      <div class="comp-card featured">
+        <h3>KeyKey</h3>
+        <div class="comp-stack">Tauri v2 + Rust + Svelte</div>
+        <ul>
+          <li><span class="check">&#10003;</span> Under 50MB memory (WebView2)</li>
+          <li><span class="check">&#10003;</span> Multi-monitor, re-queries on focus change</li>
+          <li><span class="check">&#10003;</span> Full CSS variable theme system</li>
+          <li><span class="check">&#10003;</span> Text stream + visual keyboard modes</li>
+          <li><span class="check">&#10003;</span> Smart mode + per-modifier overrides</li>
+          <li><span class="check">&#10003;</span> Combo detection and repeat compression</li>
+        </ul>
+      </div>
+      <div class="comp-card">
+        <h3>KeyViz</h3>
+        <div class="comp-stack">Electron + React</div>
+        <ul>
+          <li><span class="check">&middot;</span> ~200MB memory (bundled Chromium)</li>
+          <li><span class="check">&middot;</span> Caches monitor layout at startup</li>
+          <li><span class="check">&middot;</span> Basic color picker for theming</li>
+          <li><span class="check">&middot;</span> Text stream mode only</li>
+          <li><span class="check">&middot;</span> Basic modifier filtering</li>
+          <li><span class="check">&middot;</span> No repeat compression</li>
+        </ul>
+      </div>
+      <div class="comp-card">
+        <h3>Carnac</h3>
+        <div class="comp-stack">.NET WPF</div>
+        <ul>
+          <li><span class="check">&middot;</span> ~30MB memory (.NET runtime)</li>
+          <li><span class="check">&middot;</span> Single monitor only</li>
+          <li><span class="check">&middot;</span> Minimal theme options</li>
+          <li><span class="check">&middot;</span> Text stream mode only</li>
+          <li><span class="check">&middot;</span> Show all or nothing for modifiers</li>
+          <li><span class="check">&middot;</span> No combo detection</li>
+        </ul>
+      </div>
+    </div>
   </section>
 
-  <!-- FOOTER -->
+  <div class="section-divider"></div>
+
+  <section class="install" id="install">
+    <div class="reveal">
+      <div class="section-label">Install</div>
+      <h2 class="section-title">Build from source</h2>
+    </div>
+    <div class="install-grid reveal">
+      <div class="code-block">
+        <div class="code-header">
+          <span>terminal</span>
+          <button class="copy-btn" id="copy-btn">copy</button>
+        </div>
+        <div class="code-body" id="code-content">
+          <span class="comment"># clone and build</span><br>
+          <span class="cmd">git clone</span> https://github.com/jamditis/keykey.git<br>
+          <span class="cmd">cd</span> keykey<br>
+          <span class="cmd">npm install</span><br>
+          <span class="cmd">npm run tauri build</span><br>
+          <br>
+          <span class="comment"># or run in dev mode</span><br>
+          <span class="cmd">npm run tauri dev</span>
+        </div>
+      </div>
+      <div class="install-info">
+        <h3>Prerequisites</h3>
+        <p>KeyKey builds on Windows 10/11. macOS support is planned. You need a Rust toolchain and Node.js to build from source.</p>
+        <ul class="req-list">
+          <li><span class="dot"></span> <a href="https://nodejs.org/">Node.js</a> 18 or later</li>
+          <li><span class="dot"></span> <a href="https://rustup.rs/">Rust</a> (stable toolchain)</li>
+          <li><span class="dot"></span> Windows 10/11 with WebView2 runtime</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <footer>
     <div class="footer-left">
       <strong>KeyKey</strong> &middot; MIT License &middot; Built with <a href="https://v2.tauri.app/">Tauri</a>
@@ -893,80 +764,217 @@
     </div>
   </footer>
 
-  <!-- DEMO ANIMATION SCRIPT -->
   <script>
-    const sequences = [
-      [
-        { label: 'H', delay: 0 },
-        { label: 'E', delay: 120 },
-        { label: 'L', delay: 240 },
-        { label: 'L', delay: 360 },
-        { label: 'O', delay: 480 },
-      ],
-      [
-        { label: 'Ctrl + S', combo: true, delay: 0 },
-      ],
-      [
-        { label: 'Ctrl + Shift + P', combo: true, delay: 0 },
-      ],
-      [
-        { label: 'Up x3', delay: 0 },
-        { label: 'Enter', delay: 400 },
-      ],
-      [
-        { label: 'Ctrl + Z', combo: true, delay: 0 },
-        { label: 'Ctrl + Z', combo: true, delay: 300 },
-      ],
-      [
-        { label: 'Ctrl + C', combo: true, delay: 0 },
-        { label: 'Ctrl + V', combo: true, delay: 500 },
-      ],
-    ];
-
-    const overlay = document.getElementById('demo-overlay');
-    let seqIndex = 0;
-
-    function runSequence() {
-      const seq = sequences[seqIndex % sequences.length];
-      seqIndex++;
-      const keys = [];
-
-      seq.forEach((item, i) => {
-        setTimeout(() => {
-          const el = document.createElement('div');
-          el.className = 'demo-key' + (item.combo ? ' combo' : '');
-          el.textContent = item.label;
-          overlay.appendChild(el);
-          keys.push(el);
-
-          // Keep max 4 visible
-          const allKeys = overlay.querySelectorAll('.demo-key:not(.fading)');
-          if (allKeys.length > 4) {
-            allKeys[0].classList.add('fading');
-            setTimeout(() => allKeys[0].remove(), 500);
-          }
-        }, item.delay);
+    /* Hamburger */
+    const toggle = document.getElementById('nav-toggle');
+    const links = document.getElementById('nav-links');
+    toggle.addEventListener('click', () => {
+      const isOpen = links.classList.toggle('open');
+      toggle.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', isOpen);
+    });
+    links.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        toggle.classList.remove('open');
+        links.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
       });
+    });
 
-      // Fade out all after a pause
-      const totalDuration = seq[seq.length - 1].delay + 1800;
-      setTimeout(() => {
-        keys.forEach((k, i) => {
-          setTimeout(() => {
-            if (k.parentNode) {
-              k.classList.add('fading');
-              setTimeout(() => k.remove(), 500);
-            }
-          }, i * 100);
+    /* Scroll reveal with fallback */
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
         });
-      }, totalDuration);
-
-      // Next sequence
-      setTimeout(runSequence, totalDuration + 800);
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    } else {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
     }
 
-    // Start after a short delay
-    setTimeout(runSequence, 1200);
+    /* Copy button with fallback */
+    document.getElementById('copy-btn').addEventListener('click', function() {
+      const text = 'git clone https://github.com/jamditis/keykey.git\ncd keykey\nnpm install\nnpm run tauri build\n\n# or run in dev mode\nnpm run tauri dev';
+      const btn = this;
+      const setStatus = (label) => {
+        btn.textContent = label;
+        setTimeout(() => { btn.textContent = 'copy'; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => setStatus('copied')).catch(() => setStatus('error'));
+      } else {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.cssText = 'position:fixed;opacity:0;left:-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          setStatus('copied');
+        } catch (_) { setStatus('error'); }
+      }
+    });
+
+    /* ---- SCREEN DEMO ---- */
+    const editor = document.getElementById('editor');
+    const overlay = document.getElementById('screen-overlay');
+
+    const codeLines = [
+      { ln: 1, tokens: [{ t: 'cm', v: '// keystroke overlay for screen recordings' }] },
+      { ln: 2, tokens: [{ t: 'kw', v: 'use' }, { v: ' rdev::' }, { t: 'op', v: '{' }, { t: 'ty', v: 'listen' }, { t: 'op', v: ', ' }, { t: 'ty', v: 'Event' }, { t: 'op', v: '}' }, { t: 'op', v: ';' }] },
+      { ln: 3, tokens: [{ t: 'kw', v: 'use' }, { v: ' tauri::' }, { t: 'ty', v: 'Emitter' }, { t: 'op', v: ';' }] },
+      { ln: 4, tokens: [] },
+      { ln: 5, tokens: [{ t: 'kw', v: 'fn' }, { v: ' ' }, { t: 'fn', v: 'start_listener' }, { t: 'op', v: '(' }, { v: 'app' }, { t: 'op', v: ': ' }, { t: 'ty', v: 'AppHandle' }, { t: 'op', v: ')' }, { v: ' ' }, { t: 'op', v: '{' }] },
+      { ln: 6, tokens: [{ v: '    ' }, { t: 'kw', v: 'let' }, { v: ' ' }, { t: 'op', v: '(' }, { v: 'tx' }, { t: 'op', v: ', ' }, { v: 'rx' }, { t: 'op', v: ')' }, { v: ' ' }, { t: 'op', v: '=' }, { v: ' mpsc::' }, { t: 'fn', v: 'channel' }, { t: 'op', v: '()' }, { t: 'op', v: ';' }] },
+      { ln: 7, tokens: [{ v: '    ' }, { t: 'fn', v: 'listen' }, { t: 'op', v: '(' }, { t: 'kw', v: 'move' }, { v: ' ' }, { t: 'op', v: '|' }, { v: 'event' }, { t: 'op', v: '|' }, { v: ' ' }, { t: 'op', v: '{' }] },
+      { ln: 8, tokens: [{ v: '        app.' }, { t: 'fn', v: 'emit' }, { t: 'op', v: '(' }, { t: 'str', v: '"key-event"' }, { t: 'op', v: ', ' }, { t: 'op', v: '&' }, { v: 'event' }, { t: 'op', v: ')' }, { t: 'op', v: ';' }] },
+      { ln: 9, tokens: [{ v: '    ' }, { t: 'op', v: '});' }] },
+      { ln: 10, tokens: [{ t: 'op', v: '}' }] },
+    ];
+
+    /* Flatten tokens into per-line character arrays */
+    const typingScript = codeLines.map(line => ({
+      ln: line.ln,
+      chars: line.tokens.flatMap(tok =>
+        [...tok.v].map(ch => ({ char: ch, cls: tok.t || '' }))
+      )
+    }));
+
+    function showOverlayKey(label, isCombo) {
+      const el = document.createElement('div');
+      el.className = 'overlay-key' + (isCombo ? ' combo' : '');
+      el.textContent = label;
+      overlay.appendChild(el);
+      const keys = overlay.querySelectorAll('.overlay-key:not(.fading)');
+      if (keys.length > 3) {
+        keys[0].classList.add('fading');
+        setTimeout(() => keys[0].remove(), 400);
+      }
+      setTimeout(() => {
+        if (el.parentNode) {
+          el.classList.add('fading');
+          setTimeout(() => el.remove(), 400);
+        }
+      }, 1800);
+    }
+
+    /* Build editor DOM from internal token data (no user input) */
+    function renderEditor(upToLine, upToChar) {
+      editor.textContent = '';
+      for (let i = 0; i <= upToLine && i < typingScript.length; i++) {
+        const line = typingScript[i];
+        const maxChars = (i < upToLine) ? line.chars.length : upToChar;
+        const div = document.createElement('div');
+        const ln = document.createElement('span');
+        ln.className = 'ln';
+        ln.textContent = line.ln;
+        div.appendChild(ln);
+        let currentCls = '';
+        let span = null;
+        for (let c = 0; c < maxChars && c < line.chars.length; c++) {
+          const { char, cls } = line.chars[c];
+          if (cls !== currentCls) {
+            span = document.createElement('span');
+            if (cls) span.className = cls;
+            div.appendChild(span);
+            currentCls = cls;
+          }
+          if (!span) {
+            span = document.createElement('span');
+            div.appendChild(span);
+          }
+          span.appendChild(document.createTextNode(char));
+        }
+        if (i === upToLine && upToChar <= line.chars.length) {
+          const cursor = document.createElement('span');
+          cursor.className = 'editor-cursor';
+          div.appendChild(cursor);
+        }
+        editor.appendChild(div);
+      }
+    }
+
+    let lineIdx = 0, charIdx = 0, autoTyping = true, skipCount = 0;
+
+    function charToKeyName(ch) {
+      const map = { ' ': 'Space', '.': '.', ',': ',', ';': ';', ':': ':', '(': '(', ')': ')', '{': '{', '}': '}', '"': '"', "'": "'", '|': '|', '&': '&', '=': '=', '/': '/', '<': '<', '>': '>', '_': '_', '-': '-' };
+      return map[ch] || ch.toUpperCase();
+    }
+
+    function typeNextChar() {
+      if (!autoTyping) return;
+      if (lineIdx >= typingScript.length) {
+        setTimeout(() => showOverlayKey('Ctrl + S', true), 600);
+        setTimeout(() => showOverlayKey('Ctrl + Shift + P', true), 2000);
+        autoTyping = false;
+        return;
+      }
+      const line = typingScript[lineIdx];
+      if (charIdx >= line.chars.length) {
+        lineIdx++;
+        charIdx = 0;
+        renderEditor(lineIdx, 0);
+        if (lineIdx % 3 === 0) showOverlayKey('Enter', false);
+        setTimeout(typeNextChar, 100 + Math.random() * 80);
+        return;
+      }
+      charIdx++;
+      renderEditor(lineIdx, charIdx);
+      const ch = line.chars[charIdx - 1];
+      skipCount++;
+      if (skipCount >= 3 || ch.char === '(' || ch.char === '{' || ch.char === ';') {
+        skipCount = 0;
+        showOverlayKey(charToKeyName(ch.char), false);
+      }
+      setTimeout(typeNextChar, ch.char === ' ' ? 60 : (50 + Math.random() * 90));
+    }
+
+    renderEditor(0, 0);
+    setTimeout(typeNextChar, 1400);
+
+    /* Interactive keypress handler */
+    const modifierKeys = new Set(['Control', 'Shift', 'Alt', 'Meta']);
+    const heldMods = new Set();
+    /* Keys that should not be intercepted (accessibility + browser navigation) */
+    const passthrough = new Set(['Tab', 'F5', 'F11', 'F12']);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (modifierKeys.has(e.key)) { heldMods.add(e.key); return; }
+
+      /* Let Tab, F5, F11, F12, and browser shortcuts (Ctrl+L, Ctrl+R, etc.) through */
+      const hasCtrl = heldMods.has('Control');
+      const browserShortcut = hasCtrl && ['l', 'r', 't', 'w', 'n', 'f'].includes(e.key.toLowerCase());
+      if (passthrough.has(e.key) || browserShortcut) {
+        /* Still show it in the overlay, just don't block the default action */
+      } else {
+        e.preventDefault();
+      }
+
+      const parts = [];
+      if (heldMods.has('Control')) parts.push('Ctrl');
+      if (heldMods.has('Shift')) parts.push('Shift');
+      if (heldMods.has('Alt')) parts.push('Alt');
+      if (heldMods.has('Meta')) parts.push('Win');
+      const keyName = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+      const isCombo = parts.length > 0;
+      if (isCombo) { parts.push(keyName); showOverlayKey(parts.join(' + '), true); }
+      else {
+        const nameMap = { 'Enter': 'Enter', 'Backspace': 'Backspace', 'Tab': 'Tab', 'Escape': 'Esc', 'Delete': 'Del', 'ArrowUp': 'Up', 'ArrowDown': 'Down', 'ArrowLeft': 'Left', 'ArrowRight': 'Right', ' ': 'Space' };
+        showOverlayKey(nameMap[e.key] || keyName, false);
+      }
+    });
+
+    document.addEventListener('keyup', (e) => { heldMods.delete(e.key); });
+    window.addEventListener('blur', () => { heldMods.clear(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') heldMods.clear();
+    });
   </script>
 </body>
 </html>
