@@ -11,8 +11,6 @@
   let displayMode = $state('text_stream');
   let fadeDurationMs = $state(2000);
   let stackDirection = $state('up');
-  let marginX = $state(32);
-  let marginY = $state(32);
   let corner = $state('bottom_right');
   let unlistenDisplay: (() => void) | null = null;
   let unlistenConfig: (() => void) | null = null;
@@ -22,8 +20,6 @@
     displayMode = config.display.mode;
     fadeDurationMs = config.display.fade_duration_ms ?? 2000;
     stackDirection = config.display.stack_direction ?? 'up';
-    marginX = config.display.margins?.x ?? 32;
-    marginY = config.display.margins?.y ?? 32;
     corner = config.display.corner ?? 'bottom_right';
 
     keystream.configure({

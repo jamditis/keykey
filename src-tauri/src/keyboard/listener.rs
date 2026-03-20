@@ -87,13 +87,15 @@ fn key_to_display_name(key: &Key, name: &Option<String>) -> String {
         Key::KpPlus => "+".to_string(),
         Key::KpReturn => "Enter".to_string(),
         _ => {
-            // Log unhandled keys to file so we can add explicit mappings
-            if let Ok(mut f) = std::fs::OpenOptions::new()
-                .create(true).append(true)
-                .open(std::env::temp_dir().join("keykey-debug.log"))
-            {
-                use std::io::Write;
-                let _ = writeln!(f, "unhandled key: {:?}, name: {:?}", key, name);
+            // Log unhandled keys to file so we can add explicit mappings (debug builds only)
+            if cfg!(debug_assertions) {
+                if let Ok(mut f) = std::fs::OpenOptions::new()
+                    .create(true).append(true)
+                    .open(std::env::temp_dir().join("keykey-debug.log"))
+                {
+                    use std::io::Write;
+                    let _ = writeln!(f, "unhandled key: {:?}, name: {:?}", key, name);
+                }
             }
 
             // Use the OS-provided name if it's a printable character
@@ -201,8 +203,8 @@ pub fn start_listener(app_handle: AppHandle) {
 
             let display_name = key_to_display_name(key, &event.name);
 
-            // Debug: log every key press to file
-            if is_press {
+            // Debug: log every key press to file (debug builds only)
+            if cfg!(debug_assertions) && is_press {
                 if let Ok(mut f) = std::fs::OpenOptions::new()
                     .create(true).append(true)
                     .open(std::env::temp_dir().join("keykey-debug.log"))
