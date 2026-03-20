@@ -23,8 +23,8 @@
         "resizable": false,
         "visible": true,
         "focus": false,
-        "width": 340,
-        "height": 280
+        "width": 400,
+        "height": 300
       }
     ],
     "security": {
