@@ -36,11 +36,18 @@
   }
 
   function containerStyle(): string {
-    const styles: string[] = ['position: fixed'];
-    if (corner.includes('bottom')) styles.push(`bottom: ${marginY}px`);
-    else styles.push(`top: ${marginY}px`);
-    if (corner.includes('right')) styles.push(`right: ${marginX}px`);
-    else styles.push(`left: ${marginX}px`);
+    // Window position is handled by the Rust backend (monitor tracking + margins).
+    // Content just fills the window and anchors to the appropriate edge.
+    const styles: string[] = [
+      'position: fixed',
+      'inset: 0',
+      'display: flex',
+      'flex-direction: column',
+    ];
+    if (corner.includes('bottom')) styles.push('justify-content: flex-end');
+    else styles.push('justify-content: flex-start');
+    if (corner.includes('right')) styles.push('align-items: flex-end');
+    else styles.push('align-items: flex-start');
     return styles.join('; ');
   }
 

@@ -68,13 +68,49 @@ fn key_to_display_name(key: &Key, name: &Option<String>) -> String {
         Key::F10 => "F10".to_string(),
         Key::F11 => "F11".to_string(),
         Key::F12 => "F12".to_string(),
+        Key::Insert => "Ins".to_string(),
+        Key::BackQuote => "`".to_string(),
+        Key::Minus => "-".to_string(),
+        Key::Equal => "=".to_string(),
+        Key::LeftBracket => "[".to_string(),
+        Key::RightBracket => "]".to_string(),
+        Key::BackSlash => "\\".to_string(),
+        Key::SemiColon => ";".to_string(),
+        Key::Quote => "'".to_string(),
+        Key::Comma => ",".to_string(),
+        Key::Dot => ".".to_string(),
+        Key::Slash => "/".to_string(),
+        Key::IntlBackslash => "\\".to_string(),
+        Key::KpMinus => "-".to_string(),
+        Key::KpMultiply => "*".to_string(),
+        Key::KpDivide => "/".to_string(),
+        Key::KpPlus => "+".to_string(),
+        Key::KpReturn => "Enter".to_string(),
         _ => {
+            // Log unhandled keys to file so we can add explicit mappings
+            if let Ok(mut f) = std::fs::OpenOptions::new()
+                .create(true).append(true)
+                .open(std::env::temp_dir().join("keykey-debug.log"))
+            {
+                use std::io::Write;
+                let _ = writeln!(f, "unhandled key: {:?}, name: {:?}", key, name);
+            }
+
+            // Use the OS-provided name if it's a printable character
             if let Some(n) = name {
-                if !n.is_empty() {
-                    return n.to_uppercase();
+                let printable: String = n.chars().filter(|c| !c.is_control()).collect();
+                if !printable.is_empty() {
+                    return printable.to_uppercase();
                 }
             }
-            format!("{:?}", key)
+            // Last resort: clean up the debug format
+            let debug = format!("{:?}", key);
+            // Strip "Key" prefix and "Unknown()" wrapper
+            if debug.starts_with("Unknown(") {
+                format!("Key{}", &debug[8..debug.len()-1])
+            } else {
+                debug
+            }
         }
     }
 }
@@ -164,6 +200,18 @@ pub fn start_listener(app_handle: AppHandle) {
             };
 
             let display_name = key_to_display_name(key, &event.name);
+
+            // Debug: log every key press to file
+            if is_press {
+                if let Ok(mut f) = std::fs::OpenOptions::new()
+                    .create(true).append(true)
+                    .open(std::env::temp_dir().join("keykey-debug.log"))
+                {
+                    use std::io::Write;
+                    let _ = writeln!(f, "key={:?} name={:?} display=\"{}\"", key, &event.name, &display_name);
+                }
+            }
+
             let timestamp = event
                 .time
                 .duration_since(std::time::UNIX_EPOCH)
