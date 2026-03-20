@@ -76,10 +76,14 @@
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       padding: 0 40px; height: 64px;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; justify-content: center;
       background: rgba(7, 7, 11, 0.8);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid rgba(37, 37, 54, 0.5);
+    }
+    .nav-inner {
+      max-width: 1100px; width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
     }
     .nav-logo {
       font-family: var(--font-display); font-size: 24px; font-weight: 800;
@@ -275,6 +279,10 @@
     }
 
     /* SHARED SECTION STYLES */
+    .section-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
     .section-label {
       font-family: var(--font-mono); font-size: 12px; font-weight: 500;
       color: var(--accent); letter-spacing: 0.14em;
@@ -449,7 +457,9 @@
     /* FOOTER */
     footer {
       padding: 48px 40px; border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
     }
     .footer-left { font-size: 14px; color: var(--text-muted); }
     .footer-left strong { color: var(--text); font-family: var(--font-display); font-weight: 700; }
@@ -506,7 +516,8 @@
       .pipeline-flow { grid-template-columns: 1fr; gap: 32px; }
       .hero-actions { flex-direction: column; width: 100%; }
       .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
-      footer { flex-direction: column; gap: 20px; text-align: center; padding: 40px 24px; }
+      footer { padding: 40px 24px; }
+      .footer-inner { flex-direction: column; gap: 20px; text-align: center; }
       .footer-links { flex-wrap: wrap; justify-content: center; }
     }
     @media (max-width: 480px) {
@@ -521,6 +532,7 @@
 <body>
 
   <nav>
+    <div class="nav-inner">
     <div class="nav-logo">Key<span>Key</span></div>
     <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
       <span></span><span></span><span></span>
@@ -531,6 +543,7 @@
       <a href="#comparison">Comparison</a>
       <a href="#install">Install</a>
       <a href="https://github.com/jamditis/keykey" class="nav-cta">GitHub</a>
+    </div>
     </div>
   </nav>
 
@@ -573,6 +586,7 @@
   <div class="section-divider"></div>
 
   <section class="features" id="features">
+    <div class="section-inner">
     <div class="reveal">
       <div class="section-label">Features</div>
       <h2 class="section-title">Built for people who<br>make tutorials</h2>
@@ -625,11 +639,13 @@
         <p>Launches to tray, starts capturing immediately. Optional global hotkeys with no hardcoded defaults, so nothing conflicts with your workflow.</p>
       </div>
     </div>
+    </div>
   </section>
 
   <div class="section-divider"></div>
 
   <section class="pipeline" id="architecture">
+    <div class="section-inner">
     <div class="reveal">
       <div class="section-label">Architecture</div>
       <h2 class="section-title">How it works</h2>
@@ -664,11 +680,13 @@
         <span class="step-tech">Svelte 5</span>
       </div>
     </div>
+    </div>
   </section>
 
   <div class="section-divider"></div>
 
   <section class="comparison" id="comparison">
+    <div class="section-inner">
     <div class="reveal">
       <div class="section-label">Comparison</div>
       <h2 class="section-title">Why another keystroke<br>visualizer?</h2>
@@ -715,11 +733,13 @@
         </ul>
       </div>
     </div>
+    </div>
   </section>
 
   <div class="section-divider"></div>
 
   <section class="install" id="install">
+    <div class="section-inner">
     <div class="reveal">
       <div class="section-label">Install</div>
       <h2 class="section-title">Build from source</h2>
@@ -751,9 +771,11 @@
         </ul>
       </div>
     </div>
+    </div>
   </section>
 
   <footer>
+    <div class="section-inner footer-inner">
     <div class="footer-left">
       <strong>KeyKey</strong> &middot; MIT License &middot; Built with <a href="https://v2.tauri.app/">Tauri</a>
     </div>
@@ -761,6 +783,7 @@
       <a href="https://github.com/jamditis/keykey">Source</a>
       <a href="https://github.com/jamditis/keykey/issues">Issues</a>
       <a href="https://github.com/jamditis/keykey/blob/main/CONTRIBUTING.md">Contributing</a>
+    </div>
     </div>
   </footer>
 
