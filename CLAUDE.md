@@ -78,6 +78,13 @@ Uses SvelteKit with `adapter-static` (not plain Svelte). Routes at `src/routes/`
 - No hardcoded global hotkeys — all shortcuts are user-configured and optional.
 - The `capture-toggled` Tauri event controls a static `AtomicBool` in listener.rs. The rdev hook keeps running but events are dropped when paused.
 
+## Build workarounds
+
+- **Defender exclusions required for release builds.** Windows Defender quarantines Rust build scripts. Add exclusions for `C:\Users\amdit\rust-target`, `rustc.exe`, and `cargo.exe` via elevated PowerShell before the first release build.
+- **Set CARGO_TARGET_DIR outside OneDrive.** The project lives in OneDrive; OneDrive's Files On-Demand interferes with build artifacts. Use: `export CARGO_TARGET_DIR="C:/Users/amdit/rust-target/keykey"`
+- **Use `npm run tauri build` for testable binaries**, not `cargo build --release`. The latter skips frontend bundling — the settings window will show "localhost refused to connect" because the WebView tries to load from the dev server URL instead of embedded files.
+- **Kill old instances before rebuilding.** The running exe locks the file: `taskkill //F //IM keykey.exe`
+
 ## Testing
 
 Rust tests live alongside the code (`processor.rs` has 12 tests, `store.rs` has 1). Run with `cargo test` from `src-tauri/`. No frontend test framework is set up yet.
