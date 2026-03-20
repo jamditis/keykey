@@ -31,22 +31,25 @@
 
 <style>
   .key-label {
-    background: var(--kk-bg, rgba(0, 0, 0, 0.75));
-    color: var(--kk-text, #ffffff);
-    padding: var(--kk-padding-y, 6px) var(--kk-padding-x, 14px);
-    border-radius: var(--kk-radius, 6px);
-    font-family: var(--kk-font, system-ui, -apple-system, sans-serif);
-    font-size: var(--kk-font-size, 15px);
-    font-weight: var(--kk-font-weight, 500);
-    border: var(--kk-border-width, 0px) solid var(--kk-border-color, transparent);
-    box-shadow: var(--kk-shadow, none);
+    background: var(--kk-bg, rgba(12, 12, 18, 0.92));
+    color: var(--kk-text, #f0f0f0);
+    padding: var(--kk-padding-y, 10px) var(--kk-padding-x, 18px);
+    border-radius: var(--kk-radius, 10px);
+    font-family: var(--kk-font, 'Segoe UI', system-ui, sans-serif);
+    font-size: var(--kk-font-size, 20px);
+    font-weight: var(--kk-font-weight, 600);
+    border: var(--kk-border-width, 1px) solid var(--kk-border-color, rgba(255, 255, 255, 0.12));
+    box-shadow: var(--kk-shadow, 0 4px 20px rgba(0, 0, 0, 0.5));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     white-space: nowrap;
+    letter-spacing: 0.01em;
     transition: opacity 0.15s ease-out;
     animation: kk-enter 0.15s ease-out;
   }
 
   .combo {
-    font-weight: var(--kk-combo-font-weight, 600);
+    font-weight: var(--kk-combo-font-weight, 700);
   }
 
   @keyframes kk-enter {

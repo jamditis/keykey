@@ -17,13 +17,14 @@
         "url": "/overlay",
         "transparent": true,
         "decorations": false,
+        "shadow": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "resizable": false,
         "visible": true,
         "focus": false,
-        "width": 400,
-        "height": 300
+        "width": 340,
+        "height": 280
       }
     ],
     "security": {
