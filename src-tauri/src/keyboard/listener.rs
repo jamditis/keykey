@@ -1,5 +1,6 @@
 use rdev::{listen, Event, EventType, Key};
 use serde::Serialize;
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::thread;
@@ -30,7 +31,7 @@ pub struct KeyEvent {
     pub timestamp: u64,
 }
 
-fn key_to_display_name(key: &Key, name: &Option<String>) -> String {
+fn key_to_display_name(key: &Key, name: &Option<String>, logged_keys: &mut HashSet<String>) -> String {
     match key {
         Key::ControlLeft | Key::ControlRight => "Ctrl".to_string(),
         Key::ShiftLeft | Key::ShiftRight => "Shift".to_string(),
@@ -87,21 +88,23 @@ fn key_to_display_name(key: &Key, name: &Option<String>) -> String {
         Key::KpPlus => "+".to_string(),
         Key::KpReturn => "Enter".to_string(),
         _ => {
-            // Log unhandled keys to file so we can add explicit mappings (debug builds only)
+            // Log each unhandled key variant once (debug builds only)
             if cfg!(debug_assertions) {
-                if let Ok(mut f) = std::fs::OpenOptions::new()
-                    .create(true).append(true)
-                    .open(std::env::temp_dir().join("keykey-debug.log"))
-                {
-                    use std::io::Write;
-                    let _ = writeln!(f, "unhandled key: {:?}, name: {:?}", key, name);
+                let key_id = format!("{:?}", key);
+                if logged_keys.insert(key_id.clone()) {
+                    if let Ok(mut f) = std::fs::OpenOptions::new()
+                        .create(true).append(true)
+                        .open(std::env::temp_dir().join("keykey-debug.log"))
+                    {
+                        use std::io::Write;
+                        let _ = writeln!(f, "unhandled key: {:?}, name: {:?}", key, name);
+                    }
                 }
             }
 
             // Use the OS-provided name if it contains ASCII-printable characters.
-            // is_control() alone is too permissive — it lets through zero-width chars,
-            // variation selectors, PUA chars, and other Unicode that lacks font glyphs
-            // and renders as boxes in the overlay.
+            // Non-ASCII chars (zero-width joiners, variation selectors, PUA, etc.)
+            // lack font glyphs and render as boxes in the overlay.
             if let Some(n) = name {
                 let printable: String = n.chars()
                     .filter(|c| c.is_ascii_graphic() || *c == ' ')
@@ -110,9 +113,8 @@ fn key_to_display_name(key: &Key, name: &Option<String>) -> String {
                     return printable.to_uppercase();
                 }
             }
-            // Last resort: clean up the debug format
+            // Last resort: wrap Unknown(n) as "Key{n}", otherwise use the Debug name
             let debug = format!("{:?}", key);
-            // Strip "Key" prefix and "Unknown()" wrapper
             if debug.starts_with("Unknown(") {
                 format!("Key{}", &debug[8..debug.len()-1])
             } else {
@@ -188,6 +190,7 @@ pub fn start_listener(app_handle: AppHandle) {
     thread::spawn(move || {
         let mut processor = EventProcessor::new();
         apply_config_to_processor(&mut processor, &initial_config);
+        let mut logged_keys = HashSet::new();
 
         while let Ok(event) = rx.recv() {
             // Skip event emission when capture is paused
@@ -206,18 +209,7 @@ pub fn start_listener(app_handle: AppHandle) {
                 _ => continue,
             };
 
-            let display_name = key_to_display_name(key, &event.name);
-
-            // Debug: log every key press to file (debug builds only)
-            if cfg!(debug_assertions) && is_press {
-                if let Ok(mut f) = std::fs::OpenOptions::new()
-                    .create(true).append(true)
-                    .open(std::env::temp_dir().join("keykey-debug.log"))
-                {
-                    use std::io::Write;
-                    let _ = writeln!(f, "key={:?} name={:?} display=\"{}\"", key, &event.name, &display_name);
-                }
-            }
+            let display_name = key_to_display_name(key, &event.name, &mut logged_keys);
 
             let timestamp = event
                 .time
@@ -252,66 +244,73 @@ pub fn start_listener(app_handle: AppHandle) {
 mod tests {
     use super::*;
 
+    fn display(key: &Key, name: &Option<String>) -> String {
+        let mut logged = HashSet::new();
+        key_to_display_name(key, name, &mut logged)
+    }
+
     #[test]
     fn display_name_explicit_keys() {
-        assert_eq!(key_to_display_name(&Key::Return, &None), "Enter");
-        assert_eq!(key_to_display_name(&Key::Space, &None), "Space");
-        assert_eq!(key_to_display_name(&Key::BackQuote, &None), "`");
-        assert_eq!(key_to_display_name(&Key::LeftBracket, &None), "[");
+        assert_eq!(display(&Key::Return, &None), "Enter");
+        assert_eq!(display(&Key::Space, &None), "Space");
+        assert_eq!(display(&Key::BackQuote, &None), "`");
+        assert_eq!(display(&Key::LeftBracket, &None), "[");
     }
 
     #[test]
     fn display_name_ascii_fallback() {
-        // Regular letter keys hit the fallback with an OS name
         let name = Some("a".to_string());
-        let result = key_to_display_name(&Key::Unknown(65), &name);
-        assert_eq!(result, "A");
+        assert_eq!(display(&Key::Unknown(65), &name), "A");
     }
 
     #[test]
     fn display_name_rejects_non_ascii_unicode() {
-        // Zero-width joiner — invisible, renders as box
         let name = Some("\u{200D}".to_string());
-        let result = key_to_display_name(&Key::Unknown(999), &name);
+        let result = display(&Key::Unknown(999), &name);
         assert!(result.is_ascii(), "should not contain non-ASCII: got {:?}", result);
     }
 
     #[test]
     fn display_name_rejects_variation_selectors() {
-        // Variation selector — invisible, renders as box
         let name = Some("\u{FE0F}".to_string());
-        let result = key_to_display_name(&Key::Unknown(998), &name);
+        let result = display(&Key::Unknown(998), &name);
         assert!(result.is_ascii(), "should not contain variation selectors: got {:?}", result);
     }
 
     #[test]
     fn display_name_rejects_private_use_area() {
-        // Private use area char — no glyph in standard fonts
         let name = Some("\u{E000}".to_string());
-        let result = key_to_display_name(&Key::Unknown(997), &name);
+        let result = display(&Key::Unknown(997), &name);
         assert!(result.is_ascii(), "should not contain PUA chars: got {:?}", result);
     }
 
     #[test]
     fn display_name_rejects_replacement_char() {
-        // U+FFFD replacement character — the box itself
         let name = Some("\u{FFFD}".to_string());
-        let result = key_to_display_name(&Key::Unknown(996), &name);
+        let result = display(&Key::Unknown(996), &name);
         assert!(result.is_ascii(), "should not contain replacement char: got {:?}", result);
     }
 
     #[test]
     fn display_name_mixed_ascii_and_junk() {
-        // OS name with ASCII letter + zero-width chars
         let name = Some("a\u{200B}\u{200D}".to_string());
-        let result = key_to_display_name(&Key::Unknown(995), &name);
-        assert_eq!(result, "A", "should keep only the ASCII letter");
+        assert_eq!(display(&Key::Unknown(995), &name), "A");
     }
 
     #[test]
     fn display_name_unknown_no_name() {
-        // No OS name, unknown key — should produce clean ASCII fallback
-        let result = key_to_display_name(&Key::Unknown(42), &None);
+        let result = display(&Key::Unknown(42), &None);
         assert!(result.is_ascii(), "unknown key fallback should be ASCII: got {:?}", result);
+    }
+
+    #[test]
+    fn unhandled_key_logged_once() {
+        let mut logged = HashSet::new();
+        let name = Some("x".to_string());
+        // Call twice with same key variant
+        key_to_display_name(&Key::Unknown(123), &name, &mut logged);
+        key_to_display_name(&Key::Unknown(123), &name, &mut logged);
+        // HashSet should contain exactly one entry for this key
+        assert_eq!(logged.len(), 1);
     }
 }
